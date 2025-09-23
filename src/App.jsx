@@ -7,23 +7,42 @@ const API_BASE = import.meta?.env?.VITE_API_BASE || "";
 
 async function apiGet(path) {
   const url = `${API_BASE}${path}${path.includes("?") ? "&" : "?"}t=${Date.now()}`;
+  console.log('Fetching from:', url);
   const res = await fetch(url, {
     credentials: "include",
     cache: "no-store",
-    headers: { "Cache-Control": "no-cache" },
+    headers: { 
+      "Cache-Control": "no-cache",
+      "Content-Type": "application/json"
+    },
   });
-  if (!res.ok) throw new Error(`GET ${path} ${res.status}`);
+  console.log('Response status:', res.status);
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('API Error:', errorText);
+    throw new Error(`GET ${path} ${res.status}: ${errorText}`);
+  }
   return res.json();
 }
 
 async function apiPost(path, data) {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const url = `${API_BASE}${path}`;
+  console.log('Posting to:', url, 'Data:', data);
+  const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { 
+      "Content-Type": "application/json",
+      "Cache-Control": "no-cache"
+    },
     body: JSON.stringify(data),
     credentials: "include",
   });
-  if (!res.ok) throw new Error(`POST ${path} ${res.status}`);
+  console.log('Post response status:', res.status);
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('Post API Error:', errorText);
+    throw new Error(`POST ${path} ${res.status}: ${errorText}`);
+  }
   return res.json();
 }
 
@@ -101,7 +120,11 @@ export default function App() {
   const getCurrentCategoryItems = () => {
     if (!items || !activeCategory) return [];
     const categoryId = categories.find(cat => cat.name.toLowerCase() === activeCategory)?.id;
-    return items.filter(item => item.category_id === categoryId && item.active);
+    console.log('Current category:', activeCategory, 'Category ID:', categoryId);
+    console.log('All items:', items);
+    const filteredItems = items.filter(item => item.category_id === categoryId && item.active);
+    console.log('Filtered items:', filteredItems);
+    return filteredItems;
   };
 
   // Cart functions
@@ -181,7 +204,10 @@ export default function App() {
         total: getCartTotal()
       };
       
-      await apiPost('/api/orders', orderData);
+      console.log('Submitting order:', orderData);
+      const result = await apiPost('/api/orders', orderData);
+      console.log('Order result:', result);
+      
       setOrderStatus("success");
       clearCart();
       setShowCart(false);
@@ -190,6 +216,7 @@ export default function App() {
     } catch (error) {
       setOrderStatus("error");
       console.error("Order failed:", error);
+      console.error("Error details:", error.message);
     } finally {
       setLoading(false);
     }
@@ -355,14 +382,14 @@ export default function App() {
       {/* Category Tabs */}
       <div className="bg-white border-b">
         <div className="px-4 py-3">
-          <div className="flex gap-2 overflow-x-auto">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide category-scroll">
             {categories.filter(cat => cat.active).map(category => (
               <button
                 key={category.id}
                 onClick={() => setActiveCategory(category.name.toLowerCase())}
-                className={`flex-shrink-0 px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`flex-shrink-0 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
                   activeCategory === category.name.toLowerCase()
-                    ? 'bg-orange-500 text-white'
+                    ? 'bg-orange-500 text-white shadow-md'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -376,12 +403,28 @@ export default function App() {
 
       {/* Menu Items */}
       <main className="p-4 space-y-4 pb-20">
-        {getCurrentCategoryItems().map(item => (
-          <div
-            key={item.id}
-            className="bg-white rounded-lg shadow-sm border p-4 cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => setSelectedItem(item)}
-          >
+        {/* Debug Info - Remove this in production */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="bg-yellow-100 p-2 rounded text-xs mb-4">
+            <strong>Debug:</strong> Active: {activeCategory} | Items: {getCurrentCategoryItems().length} | Total Items: {items.length}
+          </div>
+        )}
+        
+        {getCurrentCategoryItems().length === 0 ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+              <span className="text-2xl">🍽️</span>
+            </div>
+            <p className="text-gray-500">No items available in this category</p>
+            <p className="text-gray-400 text-sm mt-2">Check back later for new items!</p>
+          </div>
+        ) : (
+          getCurrentCategoryItems().map(item => (
+            <div
+              key={item.id}
+              className="bg-white rounded-lg shadow-sm border p-4 cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => setSelectedItem(item)}
+            >
             <div className="flex gap-4">
               {/* Item Image */}
               <img
@@ -440,7 +483,8 @@ export default function App() {
               </div>
             </div>
           </div>
-        ))}
+          ))
+        )}
       </main>
 
       {/* Item Details Modal */}
