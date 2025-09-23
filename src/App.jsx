@@ -3,47 +3,58 @@ import { ShoppingCart, X, Plus, Minus, ChevronDown } from 'lucide-react';
 import { translations, languages } from './translations';
 
 // API connection - use environment variable or default
-const API_BASE = import.meta?.env?.VITE_API_BASE || "";
+const API_BASE = import.meta?.env?.VITE_API_BASE || "https://aroma-backend-production.up.railway.app";
 
 async function apiGet(path) {
   const url = `${API_BASE}${path}${path.includes("?") ? "&" : "?"}t=${Date.now()}`;
-  console.log('Fetching from:', url);
-  const res = await fetch(url, {
-    credentials: "include",
-    cache: "no-store",
-    headers: { 
-      "Cache-Control": "no-cache",
-      "Content-Type": "application/json"
-    },
-  });
-  console.log('Response status:', res.status);
-  if (!res.ok) {
-    const errorText = await res.text();
-    console.error('API Error:', errorText);
-    throw new Error(`GET ${path} ${res.status}: ${errorText}`);
+  console.log('🔗 Fetching from:', url);
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache"
+      },
+      credentials: "include",
+    });
+    console.log('📡 Response status:', res.status);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+    const data = await res.json();
+    console.log('✅ API Response:', data);
+    return data;
+  } catch (error) {
+    console.error('❌ API Error:', error);
+    throw error;
   }
-  return res.json();
 }
 
 async function apiPost(path, data) {
   const url = `${API_BASE}${path}`;
-  console.log('Posting to:', url, 'Data:', data);
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { 
-      "Content-Type": "application/json",
-      "Cache-Control": "no-cache"
-    },
-    body: JSON.stringify(data),
-    credentials: "include",
-  });
-  console.log('Post response status:', res.status);
-  if (!res.ok) {
-    const errorText = await res.text();
-    console.error('Post API Error:', errorText);
-    throw new Error(`POST ${path} ${res.status}: ${errorText}`);
+  console.log('📤 Posting to:', url, 'Data:', data);
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache"
+      },
+      body: JSON.stringify(data),
+      credentials: "include",
+    });
+    console.log('📡 Post response status:', res.status);
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errorText}`);
+    }
+    const result = await res.json();
+    console.log('✅ Post success:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Post Error:', error);
+    throw error;
   }
-  return res.json();
 }
 
 // Helper function to get translated text
@@ -70,6 +81,7 @@ export default function App() {
   const [menuData, setMenuData] = useState(null);
   const [categories, setCategories] = useState([]);
   const [items, setItems] = useState([]);
+  const [apiError, setApiError] = useState(null);
 
   const t = translations[language];
 
@@ -77,14 +89,27 @@ export default function App() {
   useEffect(() => {
     const loadMenu = async () => {
       try {
+        console.log('🔄 Loading menu from backend...');
+        setApiError(null);
         const data = await apiGet('/api/menu');
-        console.log('Loaded menu from backend:', data);
-        setMenuData(data);
-        setCategories(data.categories || []);
-        setItems(data.items || []);
+        console.log('📋 Menu data received:', data);
+        
+        if (data && data.categories && data.items) {
+          setMenuData(data);
+          setCategories(data.categories.filter(cat => cat.active));
+          setItems(data.items.filter(item => item.active));
+          console.log('✅ Menu loaded successfully');
+          console.log('📂 Categories:', data.categories);
+          console.log('🍽️ Items:', data.items);
+        } else {
+          throw new Error('Invalid menu data structure');
+        }
       } catch (error) {
-        console.log('Using default menu data');
-        // Fallback to default data if backend fails
+        console.error('❌ Failed to load menu from backend:', error);
+        setApiError(error.message);
+        
+        // Fallback to default data
+        console.log('🔄 Using fallback menu data...');
         const defaultData = {
           categories: [
             { id: 1, name: 'Burgers', icon: '🍔', sort_order: 1, active: true },
@@ -118,12 +143,19 @@ export default function App() {
 
   // Get items for current category
   const getCurrentCategoryItems = () => {
-    if (!items || !activeCategory) return [];
+    if (!items || !activeCategory) {
+      console.log('🔍 No items or category:', { items: items?.length, activeCategory });
+      return [];
+    }
+    
     const categoryId = categories.find(cat => cat.name.toLowerCase() === activeCategory)?.id;
-    console.log('Current category:', activeCategory, 'Category ID:', categoryId);
-    console.log('All items:', items);
+    console.log('🔍 Current category:', activeCategory, 'Category ID:', categoryId);
+    console.log('🔍 All items:', items.length, 'items');
+    
     const filteredItems = items.filter(item => item.category_id === categoryId && item.active);
-    console.log('Filtered items:', filteredItems);
+    console.log('🔍 Filtered items for', activeCategory, ':', filteredItems.length, 'items');
+    console.log('🔍 Filtered items:', filteredItems);
+    
     return filteredItems;
   };
 
@@ -204,9 +236,9 @@ export default function App() {
         total: getCartTotal()
       };
       
-      console.log('Submitting order:', orderData);
+      console.log('📤 Submitting order:', orderData);
       const result = await apiPost('/api/orders', orderData);
-      console.log('Order result:', result);
+      console.log('✅ Order result:', result);
       
       setOrderStatus("success");
       clearCart();
@@ -215,8 +247,8 @@ export default function App() {
       setTimeout(() => setOrderStatus(null), 3000);
     } catch (error) {
       setOrderStatus("error");
-      console.error("Order failed:", error);
-      console.error("Error details:", error.message);
+      console.error("❌ Order failed:", error);
+      console.error("❌ Error details:", error.message);
     } finally {
       setLoading(false);
     }
@@ -379,11 +411,20 @@ export default function App() {
         </div>
       </header>
 
+      {/* API Error Message */}
+      {apiError && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 mx-4 mt-4 rounded">
+          <strong>⚠️ Connection Error:</strong> {apiError}
+          <br />
+          <small>Using offline menu data</small>
+        </div>
+      )}
+
       {/* Category Tabs */}
       <div className="bg-white border-b">
         <div className="px-4 py-3">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide category-scroll">
-            {categories.filter(cat => cat.active).map(category => (
+            {categories.map(category => (
               <button
                 key={category.id}
                 onClick={() => setActiveCategory(category.name.toLowerCase())}
@@ -403,12 +444,14 @@ export default function App() {
 
       {/* Menu Items */}
       <main className="p-4 space-y-4 pb-20">
-        {/* Debug Info - Remove this in production */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="bg-yellow-100 p-2 rounded text-xs mb-4">
-            <strong>Debug:</strong> Active: {activeCategory} | Items: {getCurrentCategoryItems().length} | Total Items: {items.length}
-          </div>
-        )}
+        {/* Debug Info */}
+        <div className="bg-blue-100 p-3 rounded text-sm mb-4">
+          <strong>🔍 Debug Info:</strong><br />
+          Active Category: <strong>{activeCategory}</strong><br />
+          Items in Category: <strong>{getCurrentCategoryItems().length}</strong><br />
+          Total Items: <strong>{items.length}</strong><br />
+          API Base: <strong>{API_BASE}</strong>
+        </div>
         
         {getCurrentCategoryItems().length === 0 ? (
           <div className="text-center py-12">
@@ -425,64 +468,64 @@ export default function App() {
               className="bg-white rounded-lg shadow-sm border p-4 cursor-pointer hover:shadow-md transition-shadow"
               onClick={() => setSelectedItem(item)}
             >
-            <div className="flex gap-4">
-              {/* Item Image */}
-              <img
-                src={item.image}
-                alt={getText(item.name, language)}
-                className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setImageModalSrc(item.image);
-                  setShowImageModal(true);
-                }}
-              />
-              
-              {/* Item Details */}
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-800 mb-1">{getText(item.name, language)}</h3>
-                <p className="text-gray-600 text-sm mb-2 line-clamp-2">{getText(item.description, language)}</p>
-                <p className="text-orange-600 font-bold mb-3">€{item.price.toFixed(2)}</p>
+              <div className="flex gap-4">
+                {/* Item Image */}
+                <img
+                  src={item.image}
+                  alt={getText(item.name, language)}
+                  className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setImageModalSrc(item.image);
+                    setShowImageModal(true);
+                  }}
+                />
                 
-                {/* Quantity Controls */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                {/* Item Details */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-800 mb-1">{getText(item.name, language)}</h3>
+                  <p className="text-gray-600 text-sm mb-2 line-clamp-2">{getText(item.description, language)}</p>
+                  <p className="text-orange-600 font-bold mb-3">€{item.price.toFixed(2)}</p>
+                  
+                  {/* Quantity Controls */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateItemQuantity(item.id, -1);
+                        }}
+                        className="bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full transition-colors"
+                      >
+                        <Minus size={12} />
+                      </button>
+                      <span className="w-6 text-center font-medium text-sm">
+                        {getItemQuantity(item.id)}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateItemQuantity(item.id, 1);
+                        }}
+                        className="bg-orange-500 hover:bg-orange-600 text-white p-1.5 rounded-full transition-colors"
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        updateItemQuantity(item.id, -1);
+                        addItemToCart(item);
                       }}
-                      className="bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full transition-colors"
+                      disabled={getItemQuantity(item.id) === 0}
+                      className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
                     >
-                      <Minus size={12} />
-                    </button>
-                    <span className="w-6 text-center font-medium text-sm">
-                      {getItemQuantity(item.id)}
-                    </span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        updateItemQuantity(item.id, 1);
-                      }}
-                      className="bg-orange-500 hover:bg-orange-600 text-white p-1.5 rounded-full transition-colors"
-                    >
-                      <Plus size={12} />
+                      {t.addToCart}
                     </button>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      addItemToCart(item);
-                    }}
-                    disabled={getItemQuantity(item.id) === 0}
-                    className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-                  >
-                    {t.addToCart}
-                  </button>
                 </div>
               </div>
             </div>
-          </div>
           ))
         )}
       </main>
