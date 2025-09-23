@@ -92,10 +92,22 @@
   .scrollbar-hide {
     -ms-overflow-style: none;  /* Internet Explorer 10+ */
     scrollbar-width: none;  /* Firefox */
+    overflow-x: auto;
+    overflow-y: hidden;
   }
   
   .scrollbar-hide::-webkit-scrollbar {
     display: none;  /* Safari and Chrome */
+    width: 0;
+    height: 0;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar-track {
+    display: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar-thumb {
+    display: none;
   }
   
   /* Smooth scrolling for category tabs */
