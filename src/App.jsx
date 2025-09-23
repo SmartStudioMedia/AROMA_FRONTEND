@@ -7,7 +7,6 @@ const API_BASE = import.meta?.env?.VITE_API_BASE || "https://aroma-backend-produ
 
 async function apiGet(path) {
   const url = `${API_BASE}${path}${path.includes("?") ? "&" : "?"}t=${Date.now()}`;
-  console.log('🔗 Fetching from:', url);
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -16,22 +15,18 @@ async function apiGet(path) {
       },
       credentials: "include",
     });
-    console.log('📡 Response status:', res.status);
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
     const data = await res.json();
-    console.log('✅ API Response:', data);
     return data;
   } catch (error) {
-    console.error('❌ API Error:', error);
     throw error;
   }
 }
 
 async function apiPost(path, data) {
   const url = `${API_BASE}${path}`;
-  console.log('📤 Posting to:', url, 'Data:', data);
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -41,16 +36,13 @@ async function apiPost(path, data) {
       body: JSON.stringify(data),
       credentials: "include",
     });
-    console.log('📡 Post response status:', res.status);
     if (!res.ok) {
       const errorText = await res.text();
       throw new Error(`HTTP ${res.status}: ${errorText}`);
     }
     const result = await res.json();
-    console.log('✅ Post success:', result);
     return result;
   } catch (error) {
-    console.error('❌ Post Error:', error);
     throw error;
   }
 }
@@ -87,26 +79,21 @@ export default function App() {
   useEffect(() => {
     const loadMenu = async () => {
       try {
-        console.log('🔄 Loading menu from backend...');
         setApiError(null);
         
         const data = await apiGet('/api/menu');
-        console.log('📋 Menu data received:', data);
         
         if (data && data.categories && data.items) {
           setMenuData(data);
           setCategories(data.categories.filter(cat => cat.active));
           setItems(data.items.filter(item => item.active));
-          console.log('✅ Menu loaded successfully');
         } else {
           throw new Error('Invalid menu data structure');
         }
       } catch (error) {
-        console.error('❌ Failed to load menu from backend:', error);
         setApiError(error.message);
         
         // Fallback to default data
-        console.log('🔄 Using fallback menu data...');
         const defaultData = {
           categories: [
             { id: 1, name: 'Burgers', icon: '🍔', sort_order: 1, active: true },
@@ -141,16 +128,11 @@ export default function App() {
   // Get items for current category
   const getCurrentCategoryItems = () => {
     if (!items || !activeCategory) {
-      console.log('🔍 No items or category:', { items: items?.length, activeCategory });
       return [];
     }
     
     const categoryId = categories.find(cat => cat.name.toLowerCase() === activeCategory)?.id;
-    console.log('🔍 Current category:', activeCategory, 'Category ID:', categoryId);
-    console.log('🔍 All items:', items.length, 'items');
-    
     const filteredItems = items.filter(item => item.category_id === categoryId && item.active);
-    console.log('🔍 Filtered items for', activeCategory, ':', filteredItems.length, 'items');
     
     return filteredItems;
   };
@@ -232,9 +214,7 @@ export default function App() {
         total: getCartTotal()
       };
       
-      console.log('📤 Submitting order:', orderData);
       const result = await apiPost('/api/orders', orderData);
-      console.log('✅ Order result:', result);
       
       setOrderStatus("success");
       clearCart();
@@ -243,7 +223,6 @@ export default function App() {
       setTimeout(() => setOrderStatus(null), 3000);
     } catch (error) {
       setOrderStatus("error");
-      console.error("❌ Order failed:", error);
     } finally {
       setLoading(false);
     }
@@ -439,14 +418,6 @@ export default function App() {
 
       {/* Menu Items */}
       <main className="p-4 space-y-4 pb-20">
-        {/* Debug Info */}
-        <div className="bg-blue-100 p-3 rounded text-sm mb-4">
-          <strong>🔍 Debug Info:</strong><br />
-          Active Category: <strong>{activeCategory}</strong><br />
-          Items in Category: <strong>{getCurrentCategoryItems().length}</strong><br />
-          Total Items: <strong>{items.length}</strong><br />
-          API Base: <strong>{API_BASE}</strong>
-        </div>
         
         {getCurrentCategoryItems().length === 0 ? (
           <div className="text-center py-12">
