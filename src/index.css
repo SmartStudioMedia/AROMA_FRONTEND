@@ -97,17 +97,29 @@
   }
   
   .scrollbar-hide::-webkit-scrollbar {
-    display: none;  /* Safari and Chrome */
-    width: 0;
-    height: 0;
+    display: none !important;  /* Safari and Chrome */
+    width: 0 !important;
+    height: 0 !important;
   }
   
   .scrollbar-hide::-webkit-scrollbar-track {
-    display: none;
+    display: none !important;
   }
   
   .scrollbar-hide::-webkit-scrollbar-thumb {
-    display: none;
+    display: none !important;
+  }
+  
+  /* Force hide scrollbar for category tabs */
+  .category-scroll {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  
+  .category-scroll::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
   }
   
   /* Smooth scrolling for category tabs */
