@@ -91,6 +91,15 @@ export default function App() {
       try {
         console.log('🔄 Loading menu from backend...');
         setApiError(null);
+        
+        // First test the debug endpoint
+        try {
+          const debugData = await apiGet('/api/debug');
+          console.log('🔍 Debug endpoint response:', debugData);
+        } catch (debugError) {
+          console.log('⚠️ Debug endpoint failed:', debugError);
+        }
+        
         const data = await apiGet('/api/menu');
         console.log('📋 Menu data received:', data);
         
