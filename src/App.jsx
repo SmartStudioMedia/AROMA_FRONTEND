@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ShoppingCart, X, Plus, Minus, ChevronDown } from 'lucide-react';
 import { translations, languages } from './translations';
 
-// API connection - use environment variable or default
+// API connection
 const API_BASE = import.meta?.env?.VITE_API_BASE || "https://aroma-backend-production.up.railway.app";
 
 async function apiGet(path) {
@@ -92,14 +92,6 @@ export default function App() {
         console.log('🔄 Loading menu from backend...');
         setApiError(null);
         
-        // First test the debug endpoint
-        try {
-          const debugData = await apiGet('/api/debug');
-          console.log('🔍 Debug endpoint response:', debugData);
-        } catch (debugError) {
-          console.log('⚠️ Debug endpoint failed:', debugError);
-        }
-        
         const data = await apiGet('/api/menu');
         console.log('📋 Menu data received:', data);
         
@@ -108,8 +100,6 @@ export default function App() {
           setCategories(data.categories.filter(cat => cat.active));
           setItems(data.items.filter(item => item.active));
           console.log('✅ Menu loaded successfully');
-          console.log('📂 Categories:', data.categories);
-          console.log('🍽️ Items:', data.items);
         } else {
           throw new Error('Invalid menu data structure');
         }
@@ -163,7 +153,6 @@ export default function App() {
     
     const filteredItems = items.filter(item => item.category_id === categoryId && item.active);
     console.log('🔍 Filtered items for', activeCategory, ':', filteredItems.length, 'items');
-    console.log('🔍 Filtered items:', filteredItems);
     
     return filteredItems;
   };
@@ -257,7 +246,6 @@ export default function App() {
     } catch (error) {
       setOrderStatus("error");
       console.error("❌ Order failed:", error);
-      console.error("❌ Error details:", error.message);
     } finally {
       setLoading(false);
     }
