@@ -12,8 +12,7 @@ async function apiGet(path) {
     const res = await fetch(url, {
       method: 'GET',
       headers: { 
-        "Content-Type": "application/json",
-        "Cache-Control": "no-cache"
+        "Content-Type": "application/json"
       },
       credentials: "include",
     });
@@ -37,8 +36,7 @@ async function apiPost(path, data) {
     const res = await fetch(url, {
       method: "POST",
       headers: { 
-        "Content-Type": "application/json",
-        "Cache-Control": "no-cache"
+        "Content-Type": "application/json"
       },
       body: JSON.stringify(data),
       credentials: "include",
