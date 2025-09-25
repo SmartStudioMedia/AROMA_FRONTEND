@@ -72,6 +72,11 @@ export default function App() {
   const [categories, setCategories] = useState([]);
   const [items, setItems] = useState([]);
   const [apiError, setApiError] = useState(null);
+  const [showCustomerForm, setShowCustomerForm] = useState(false);
+  const [customerInfo, setCustomerInfo] = useState({
+    name: '',
+    email: ''
+  });
 
   const t = translations[language];
 
@@ -200,9 +205,25 @@ export default function App() {
     return cart.reduce((total, item) => total + (item.price * item.qty), 0);
   };
 
-  // Submit order
-  const submitOrder = async () => {
+  // Show customer form before submitting order
+  const submitOrder = () => {
     if (cart.length === 0) return;
+    setShowCustomerForm(true);
+  };
+
+  // Actually submit the order with customer info
+  const confirmOrder = async () => {
+    if (!customerInfo.name.trim() || !customerInfo.email.trim()) {
+      alert('Please fill in both name and email');
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(customerInfo.email)) {
+      alert('Please enter a valid email address');
+      return;
+    }
     
     setLoading(true);
     try {
@@ -210,7 +231,8 @@ export default function App() {
         items: cart.map(item => ({ id: item.id, qty: item.qty })),
         orderType: orderType,
         tableNumber: orderType === 'dine-in' ? Math.floor(Math.random() * 20) + 1 : null,
-        customerName: 'Customer',
+        customerName: customerInfo.name,
+        customerEmail: customerInfo.email,
         total: getCartTotal()
       };
       
@@ -219,6 +241,8 @@ export default function App() {
       setOrderStatus("success");
       clearCart();
       setShowCart(false);
+      setShowCustomerForm(false);
+      setCustomerInfo({ name: '', email: '' });
       
       setTimeout(() => setOrderStatus(null), 3000);
     } catch (error) {
@@ -670,6 +694,92 @@ export default function App() {
                   </div>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Customer Form Modal */}
+      {showCustomerForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full">
+            <div className="p-6 border-b">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-800">Complete Your Order</h2>
+                <button
+                  onClick={() => setShowCustomerForm(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-6">
+                <h3 className="font-medium text-gray-800 mb-4">Order Summary</h3>
+                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                  {cart.map(item => (
+                    <div key={item.id} className="flex justify-between text-sm">
+                      <span>{getText(item.name, language)} × {item.qty}</span>
+                      <span>€{(item.price * item.qty).toFixed(2)}</span>
+                    </div>
+                  ))}
+                  <div className="border-t pt-2 flex justify-between font-bold">
+                    <span>Total:</span>
+                    <span>€{getCartTotal().toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={customerInfo.name}
+                    onChange={(e) => setCustomerInfo(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Enter your full name"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    value={customerInfo.email}
+                    onChange={(e) => setCustomerInfo(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Enter your email address"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    We'll send your order confirmation to this email
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  onClick={() => setShowCustomerForm(false)}
+                  className="w-full bg-gray-500 hover:bg-gray-600 text-white py-3 rounded-lg font-medium transition-colors"
+                >
+                  Back to Cart
+                </button>
+                <button
+                  onClick={confirmOrder}
+                  disabled={loading || !customerInfo.name.trim() || !customerInfo.email.trim()}
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
+                >
+                  {loading ? "Processing..." : "Complete Order & Send Confirmation"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
