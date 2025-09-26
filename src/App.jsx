@@ -210,7 +210,10 @@ export default function App() {
   // Show customer form before submitting order
   const submitOrder = () => {
     if (cart.length === 0) return;
-    setShowCustomerForm(true);
+    setShowCart(false); // Close cart modal first
+    setTimeout(() => {
+      setShowCustomerForm(true); // Open customer form after cart closes
+    }, 100);
   };
 
   // Actually submit the order with customer info
@@ -705,7 +708,7 @@ export default function App() {
 
       {/* Customer Form Modal */}
       {showCustomerForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" style={{zIndex: 9999}}>
           <div className="bg-white rounded-2xl max-w-md w-full">
             <div className="p-6 border-b">
               <div className="flex justify-between items-center">
@@ -783,7 +786,7 @@ export default function App() {
                       <div className="text-sm">
                         <span className="text-gray-700 font-medium">Marketing Communications</span>
                         <p className="text-gray-500 text-xs mt-1">
-                          I would like to receive special offers, promotions, and marketing materials from {RESTAURANT_NAME || 'AROMA Restaurant'}
+                          I would like to receive special offers, promotions, and marketing materials from AROMA Restaurant
                         </p>
                       </div>
                     </label>
