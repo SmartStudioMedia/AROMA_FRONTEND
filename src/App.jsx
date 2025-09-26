@@ -75,7 +75,9 @@ export default function App() {
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
-    email: ''
+    email: '',
+    marketingConsent: false,
+    newsletterConsent: false
   });
 
   const t = translations[language];
@@ -233,6 +235,8 @@ export default function App() {
         tableNumber: orderType === 'dine-in' ? Math.floor(Math.random() * 20) + 1 : null,
         customerName: customerInfo.name,
         customerEmail: customerInfo.email,
+        marketingConsent: customerInfo.marketingConsent,
+        newsletterConsent: customerInfo.newsletterConsent,
         total: getCartTotal()
       };
       
@@ -761,6 +765,47 @@ export default function App() {
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     We'll send your order confirmation to this email
+                  </p>
+                </div>
+
+                {/* Marketing Consent Options */}
+                <div className="space-y-3 pt-4 border-t border-gray-200">
+                  <h4 className="text-sm font-medium text-gray-700">Communication Preferences</h4>
+                  
+                  <div className="space-y-3">
+                    <label className="flex items-start space-x-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={customerInfo.marketingConsent}
+                        onChange={(e) => setCustomerInfo(prev => ({ ...prev, marketingConsent: e.target.checked }))}
+                        className="mt-1 h-4 w-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                      />
+                      <div className="text-sm">
+                        <span className="text-gray-700 font-medium">Marketing Communications</span>
+                        <p className="text-gray-500 text-xs mt-1">
+                          I would like to receive special offers, promotions, and marketing materials from {RESTAURANT_NAME || 'AROMA Restaurant'}
+                        </p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-start space-x-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={customerInfo.newsletterConsent}
+                        onChange={(e) => setCustomerInfo(prev => ({ ...prev, newsletterConsent: e.target.checked }))}
+                        className="mt-1 h-4 w-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                      />
+                      <div className="text-sm">
+                        <span className="text-gray-700 font-medium">Newsletter (Optional)</span>
+                        <p className="text-gray-500 text-xs mt-1">
+                          I would like to receive our monthly newsletter with menu updates and restaurant news
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                  
+                  <p className="text-xs text-gray-500">
+                    You can unsubscribe from these communications at any time. Your privacy is important to us.
                   </p>
                 </div>
               </div>
