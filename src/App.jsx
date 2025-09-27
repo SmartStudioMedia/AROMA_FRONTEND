@@ -69,6 +69,7 @@ export default function App() {
   const [imageModalSrc, setImageModalSrc] = useState('');
   const [videoModalSrc, setVideoModalSrc] = useState('');
   const [modalType, setModalType] = useState('image'); // 'image' or 'video'
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [itemQuantities, setItemQuantities] = useState({});
   const [menuData, setMenuData] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -222,6 +223,7 @@ export default function App() {
     if (isVideoUrl(url)) {
       setVideoModalSrc(url);
       setModalType('video');
+      setIsVideoPlaying(false); // Reset video playing state
     } else {
       setImageModalSrc(url);
       setModalType('image');
@@ -328,6 +330,14 @@ export default function App() {
   const MediaModal = () => {
     if (!showImageModal) return null;
     
+    const handleVideoClick = (e) => {
+      e.stopPropagation();
+      const video = e.target;
+      if (video.paused) {
+        video.play().catch(err => console.log('Autoplay failed:', err));
+      }
+    };
+    
     return (
       <div 
         className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50"
@@ -335,17 +345,38 @@ export default function App() {
       >
         <div className="relative max-w-4xl max-h-full">
           {modalType === 'video' ? (
-            <video
-              src={videoModalSrc}
-              controls
-              autoPlay
-              muted
-              loop
-              className="max-w-full max-h-full object-contain rounded-lg"
-              onClick={(e) => e.stopPropagation()}
-            >
-              Your browser does not support the video tag.
-            </video>
+            <div className="relative">
+              <video
+                src={videoModalSrc}
+                controls
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                className="max-w-full max-h-full object-contain rounded-lg"
+                onClick={handleVideoClick}
+                onLoadedData={(e) => {
+                  // Try to play when video is loaded
+                  e.target.play().catch(err => console.log('Initial autoplay failed:', err));
+                }}
+                onPlay={() => setIsVideoPlaying(true)}
+                onPause={() => setIsVideoPlaying(false)}
+                onEnded={() => setIsVideoPlaying(false)}
+              >
+                Your browser does not support the video tag.
+              </video>
+              {!isVideoPlaying && (
+                <div 
+                  className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center cursor-pointer"
+                  onClick={handleVideoClick}
+                >
+                  <div className="w-20 h-20 bg-white bg-opacity-90 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all transform hover:scale-110">
+                    <span className="text-4xl ml-1">▶️</span>
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <img
               src={imageModalSrc}
