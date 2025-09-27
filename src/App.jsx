@@ -215,7 +215,37 @@ export default function App() {
     if (!url) return false;
     const videoExtensions = ['.mp4', '.webm', '.ogg', '.avi', '.mov', '.wmv', '.flv', '.mkv'];
     const urlLower = url.toLowerCase();
-    return videoExtensions.some(ext => urlLower.includes(ext)) || urlLower.includes('video');
+    
+    // Check for direct video files
+    if (videoExtensions.some(ext => urlLower.includes(ext))) return true;
+    
+    // Check for YouTube URLs
+    if (urlLower.includes('youtube.com') || urlLower.includes('youtu.be')) return true;
+    
+    // Check for Vimeo URLs
+    if (urlLower.includes('vimeo.com')) return true;
+    
+    // Check for other video hosting
+    if (urlLower.includes('video') || urlLower.includes('stream')) return true;
+    
+    return false;
+  };
+
+  // Helper function to get YouTube embed URL
+  const getYouTubeEmbedUrl = (url) => {
+    let videoId = '';
+    if (url.includes('youtube.com/watch?v=')) {
+      videoId = url.split('v=')[1].split('&')[0];
+    } else if (url.includes('youtu.be/')) {
+      videoId = url.split('youtu.be/')[1].split('?')[0];
+    }
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}`;
+  };
+
+  // Helper function to get Vimeo embed URL
+  const getVimeoEmbedUrl = (url) => {
+    const videoId = url.split('vimeo.com/')[1].split('?')[0];
+    return `https://player.vimeo.com/video/${videoId}?autoplay=1&muted=1&loop=1`;
   };
 
   // Helper function to get the primary media URL (video takes priority over image)
@@ -353,6 +383,10 @@ export default function App() {
         video.play().catch(err => console.log('Autoplay failed:', err));
       }
     };
+
+    // Determine if this is a YouTube or Vimeo URL
+    const isYouTube = videoModalSrc.includes('youtube.com') || videoModalSrc.includes('youtu.be');
+    const isVimeo = videoModalSrc.includes('vimeo.com');
     
     return (
       <div 
@@ -362,35 +396,57 @@ export default function App() {
         <div className="relative max-w-4xl max-h-full">
           {modalType === 'video' ? (
             <div className="relative">
-              <video
-                src={videoModalSrc}
-                controls
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                className="max-w-full max-h-full object-contain rounded-lg"
-                onClick={handleVideoClick}
-                onLoadedData={(e) => {
-                  // Try to play when video is loaded
-                  e.target.play().catch(err => console.log('Initial autoplay failed:', err));
-                }}
-                onPlay={() => setIsVideoPlaying(true)}
-                onPause={() => setIsVideoPlaying(false)}
-                onEnded={() => setIsVideoPlaying(false)}
-              >
-                Your browser does not support the video tag.
-              </video>
-              {!isVideoPlaying && (
-                <div 
-                  className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center cursor-pointer"
-                  onClick={handleVideoClick}
-                >
-                  <div className="w-20 h-20 bg-white bg-opacity-90 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all transform hover:scale-110">
-                    <span className="text-4xl ml-1">▶️</span>
-                  </div>
-                </div>
+              {isYouTube ? (
+                <iframe
+                  src={getYouTubeEmbedUrl(videoModalSrc)}
+                  className="w-full h-96 rounded-lg"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title="YouTube video"
+                />
+              ) : isVimeo ? (
+                <iframe
+                  src={getVimeoEmbedUrl(videoModalSrc)}
+                  className="w-full h-96 rounded-lg"
+                  frameBorder="0"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
+                  title="Vimeo video"
+                />
+              ) : (
+                <>
+                  <video
+                    src={videoModalSrc}
+                    controls
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                    className="max-w-full max-h-full object-contain rounded-lg"
+                    onClick={handleVideoClick}
+                    onLoadedData={(e) => {
+                      // Try to play when video is loaded
+                      e.target.play().catch(err => console.log('Initial autoplay failed:', err));
+                    }}
+                    onPlay={() => setIsVideoPlaying(true)}
+                    onPause={() => setIsVideoPlaying(false)}
+                    onEnded={() => setIsVideoPlaying(false)}
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                  {!isVideoPlaying && (
+                    <div 
+                      className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center cursor-pointer"
+                      onClick={handleVideoClick}
+                    >
+                      <div className="w-20 h-20 bg-white bg-opacity-90 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all transform hover:scale-110">
+                        <span className="text-4xl ml-1">▶️</span>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           ) : (
@@ -551,17 +607,29 @@ export default function App() {
               <div className="flex gap-4">
                 {/* Item Image/Video */}
                 {getMediaType(item) === 'video' ? (
-                  <div className="relative w-20 h-20 rounded-lg flex-shrink-0 bg-gray-200 flex items-center justify-center">
-                    <video
-                      src={getPrimaryMediaUrl(item)}
-                      className="w-full h-full object-cover rounded-lg"
-                      muted
-                      loop
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openMediaModal(getPrimaryMediaUrl(item));
-                      }}
-                    />
+                  <div className="relative w-20 h-20 rounded-lg flex-shrink-0 bg-gray-200 flex items-center justify-center cursor-pointer"
+                       onClick={(e) => {
+                         e.stopPropagation();
+                         openMediaModal(getPrimaryMediaUrl(item));
+                       }}>
+                    {(getPrimaryMediaUrl(item).includes('youtube.com') || getPrimaryMediaUrl(item).includes('youtu.be')) ? (
+                      <img
+                        src={`https://img.youtube.com/vi/${getPrimaryMediaUrl(item).includes('youtube.com/watch?v=') ? getPrimaryMediaUrl(item).split('v=')[1].split('&')[0] : getPrimaryMediaUrl(item).split('youtu.be/')[1].split('?')[0]}/mqdefault.jpg`}
+                        alt={getText(item.name, language)}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    ) : getPrimaryMediaUrl(item).includes('vimeo.com') ? (
+                      <div className="w-full h-full bg-gray-300 rounded-lg flex items-center justify-center">
+                        <span className="text-2xl">🎥</span>
+                      </div>
+                    ) : (
+                      <video
+                        src={getPrimaryMediaUrl(item)}
+                        className="w-full h-full object-cover rounded-lg"
+                        muted
+                        loop
+                      />
+                    )}
                     <div className="absolute inset-0 bg-black bg-opacity-30 rounded-lg flex items-center justify-center">
                       <div className="w-8 h-8 bg-white bg-opacity-80 rounded-full flex items-center justify-center">
                         <span className="text-lg">▶️</span>
@@ -635,19 +703,31 @@ export default function App() {
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="relative">
               {getMediaType(selectedItem) === 'video' ? (
-                <div className="relative w-full h-48 bg-gray-200 flex items-center justify-center">
-                  <video
-                    src={getPrimaryMediaUrl(selectedItem)}
-                    className="w-full h-full object-cover rounded-t-2xl cursor-pointer"
-                    muted
-                    loop
-                    onClick={() => {
-                      openMediaModal(getPrimaryMediaUrl(selectedItem));
-                    }}
-                  />
+                <div className="relative w-full h-48 bg-gray-200 flex items-center justify-center cursor-pointer"
+                     onClick={() => {
+                       openMediaModal(getPrimaryMediaUrl(selectedItem));
+                     }}>
+                  {(getPrimaryMediaUrl(selectedItem).includes('youtube.com') || getPrimaryMediaUrl(selectedItem).includes('youtu.be')) ? (
+                    <img
+                      src={`https://img.youtube.com/vi/${getPrimaryMediaUrl(selectedItem).includes('youtube.com/watch?v=') ? getPrimaryMediaUrl(selectedItem).split('v=')[1].split('&')[0] : getPrimaryMediaUrl(selectedItem).split('youtu.be/')[1].split('?')[0]}/maxresdefault.jpg`}
+                      alt={getText(selectedItem.name, language)}
+                      className="w-full h-full object-cover rounded-t-2xl"
+                    />
+                  ) : getPrimaryMediaUrl(selectedItem).includes('vimeo.com') ? (
+                    <div className="w-full h-full bg-gray-300 rounded-t-2xl flex items-center justify-center">
+                      <span className="text-6xl">🎥</span>
+                    </div>
+                  ) : (
+                    <video
+                      src={getPrimaryMediaUrl(selectedItem)}
+                      className="w-full h-full object-cover rounded-t-2xl"
+                      muted
+                      loop
+                    />
+                  )}
                   <div className="absolute inset-0 bg-black bg-opacity-30 rounded-t-2xl flex items-center justify-center">
-                    <div className="w-12 h-12 bg-white bg-opacity-80 rounded-full flex items-center justify-center">
-                      <span className="text-2xl">▶️</span>
+                    <div className="w-16 h-16 bg-white bg-opacity-80 rounded-full flex items-center justify-center">
+                      <span className="text-3xl">▶️</span>
                     </div>
                   </div>
                 </div>
@@ -767,12 +847,24 @@ export default function App() {
                           {/* Item Thumbnail */}
                           {getMediaType(item) === 'video' ? (
                             <div className="relative w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0">
-                              <video
-                                src={getPrimaryMediaUrl(item)}
-                                className="w-full h-full object-cover rounded-lg"
-                                muted
-                                loop
-                              />
+                              {(getPrimaryMediaUrl(item).includes('youtube.com') || getPrimaryMediaUrl(item).includes('youtu.be')) ? (
+                                <img
+                                  src={`https://img.youtube.com/vi/${getPrimaryMediaUrl(item).includes('youtube.com/watch?v=') ? getPrimaryMediaUrl(item).split('v=')[1].split('&')[0] : getPrimaryMediaUrl(item).split('youtu.be/')[1].split('?')[0]}/default.jpg`}
+                                  alt={getText(item.name, language)}
+                                  className="w-full h-full object-cover rounded-lg"
+                                />
+                              ) : getPrimaryMediaUrl(item).includes('vimeo.com') ? (
+                                <div className="w-full h-full bg-gray-300 rounded-lg flex items-center justify-center">
+                                  <span className="text-sm">🎥</span>
+                                </div>
+                              ) : (
+                                <video
+                                  src={getPrimaryMediaUrl(item)}
+                                  className="w-full h-full object-cover rounded-lg"
+                                  muted
+                                  loop
+                                />
+                              )}
                               <div className="absolute inset-0 bg-black bg-opacity-20 rounded-lg flex items-center justify-center">
                                 <span className="text-xs">▶️</span>
                               </div>
