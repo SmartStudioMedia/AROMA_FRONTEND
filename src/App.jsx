@@ -67,6 +67,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [imageModalSrc, setImageModalSrc] = useState('');
+  const [videoModalSrc, setVideoModalSrc] = useState('');
+  const [modalType, setModalType] = useState('image'); // 'image' or 'video'
   const [itemQuantities, setItemQuantities] = useState({});
   const [menuData, setMenuData] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -207,6 +209,26 @@ export default function App() {
     return cart.reduce((total, item) => total + (item.price * item.qty), 0);
   };
 
+  // Helper function to determine if URL is video or image
+  const isVideoUrl = (url) => {
+    if (!url) return false;
+    const videoExtensions = ['.mp4', '.webm', '.ogg', '.avi', '.mov', '.wmv', '.flv', '.mkv'];
+    const urlLower = url.toLowerCase();
+    return videoExtensions.some(ext => urlLower.includes(ext)) || urlLower.includes('video');
+  };
+
+  // Helper function to open media modal
+  const openMediaModal = (url) => {
+    if (isVideoUrl(url)) {
+      setVideoModalSrc(url);
+      setModalType('video');
+    } else {
+      setImageModalSrc(url);
+      setModalType('image');
+    }
+    setShowImageModal(true);
+  };
+
   // Show customer form before submitting order
   const submitOrder = () => {
     if (cart.length === 0) return;
@@ -302,8 +324,8 @@ export default function App() {
     );
   };
 
-  // Image Modal Component
-  const ImageModal = () => {
+  // Media Modal Component (Image/Video)
+  const MediaModal = () => {
     if (!showImageModal) return null;
     
     return (
@@ -312,12 +334,26 @@ export default function App() {
         onClick={() => setShowImageModal(false)}
       >
         <div className="relative max-w-4xl max-h-full">
-          <img
-            src={imageModalSrc}
-            alt="Full size"
-            className="max-w-full max-h-full object-contain rounded-lg"
-            onClick={(e) => e.stopPropagation()}
-          />
+          {modalType === 'video' ? (
+            <video
+              src={videoModalSrc}
+              controls
+              autoPlay
+              muted
+              loop
+              className="max-w-full max-h-full object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Your browser does not support the video tag.
+            </video>
+          ) : (
+            <img
+              src={imageModalSrc}
+              alt="Full size"
+              className="max-w-full max-h-full object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
           <button
             onClick={() => setShowImageModal(false)}
             className="absolute top-4 right-4 bg-white bg-opacity-90 p-2 rounded-full hover:bg-opacity-100 transition-colors"
@@ -466,17 +502,36 @@ export default function App() {
               onClick={() => setSelectedItem(item)}
             >
               <div className="flex gap-4">
-                {/* Item Image */}
-                <img
-                  src={item.image}
-                  alt={getText(item.name, language)}
-                  className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setImageModalSrc(item.image);
-                    setShowImageModal(true);
-                  }}
-                />
+                {/* Item Image/Video */}
+                {isVideoUrl(item.image || item.video) ? (
+                  <div className="relative w-20 h-20 rounded-lg flex-shrink-0 bg-gray-200 flex items-center justify-center">
+                    <video
+                      src={item.video || item.image}
+                      className="w-full h-full object-cover rounded-lg"
+                      muted
+                      loop
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openMediaModal(item.video || item.image);
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-30 rounded-lg flex items-center justify-center">
+                      <div className="w-8 h-8 bg-white bg-opacity-80 rounded-full flex items-center justify-center">
+                        <span className="text-lg">▶️</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <img
+                    src={item.image}
+                    alt={getText(item.name, language)}
+                    className="w-20 h-20 object-cover rounded-lg flex-shrink-0 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openMediaModal(item.image);
+                    }}
+                  />
+                )}
                 
                 {/* Item Details */}
                 <div className="flex-1 min-w-0">
@@ -532,15 +587,33 @@ export default function App() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="relative">
-              <img
-                src={selectedItem.image}
-                alt={getText(selectedItem.name, language)}
-                className="w-full h-48 object-cover rounded-t-2xl cursor-pointer"
-                onClick={() => {
-                  setImageModalSrc(selectedItem.image);
-                  setShowImageModal(true);
-                }}
-              />
+              {isVideoUrl(selectedItem.image || selectedItem.video) ? (
+                <div className="relative w-full h-48 bg-gray-200 flex items-center justify-center">
+                  <video
+                    src={selectedItem.video || selectedItem.image}
+                    className="w-full h-full object-cover rounded-t-2xl cursor-pointer"
+                    muted
+                    loop
+                    onClick={() => {
+                      openMediaModal(selectedItem.video || selectedItem.image);
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-30 rounded-t-2xl flex items-center justify-center">
+                    <div className="w-12 h-12 bg-white bg-opacity-80 rounded-full flex items-center justify-center">
+                      <span className="text-2xl">▶️</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <img
+                  src={selectedItem.image}
+                  alt={getText(selectedItem.name, language)}
+                  className="w-full h-48 object-cover rounded-t-2xl cursor-pointer"
+                  onClick={() => {
+                    openMediaModal(selectedItem.image);
+                  }}
+                />
+              )}
               <button
                 onClick={() => setSelectedItem(null)}
                 className="absolute top-3 right-3 bg-white bg-opacity-90 p-2 rounded-full hover:bg-opacity-100 transition-colors"
@@ -645,11 +718,25 @@ export default function App() {
                       <div key={item.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
                         <div className="flex items-center gap-3 flex-1">
                           {/* Item Thumbnail */}
-                          <img
-                            src={item.image}
-                            alt={getText(item.name, language)}
-                            className="w-12 h-12 object-cover rounded-lg flex-shrink-0"
-                          />
+                          {isVideoUrl(item.image || item.video) ? (
+                            <div className="relative w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0">
+                              <video
+                                src={item.video || item.image}
+                                className="w-full h-full object-cover rounded-lg"
+                                muted
+                                loop
+                              />
+                              <div className="absolute inset-0 bg-black bg-opacity-20 rounded-lg flex items-center justify-center">
+                                <span className="text-xs">▶️</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <img
+                              src={item.image}
+                              alt={getText(item.name, language)}
+                              className="w-12 h-12 object-cover rounded-lg flex-shrink-0"
+                            />
+                          )}
                           <div className="flex-1">
                             <h3 className="font-medium text-gray-800">{getText(item.name, language)}</h3>
                             <p className="text-gray-600 text-sm">
@@ -816,7 +903,7 @@ export default function App() {
       )}
 
       {/* Image Modal */}
-      <ImageModal />
+      <MediaModal />
 
       {/* Order Status Messages */}
       {orderStatus === "success" && (
