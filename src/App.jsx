@@ -8,12 +8,12 @@ const API_BASE = import.meta?.env?.VITE_API_BASE || "https://aroma-backend-produ
 async function apiGet(path) {
   const url = `${API_BASE}${path}${path.includes("?") ? "&" : "?"}t=${Date.now()}`;
   try {
-    const res = await fetch(url, {
+  const res = await fetch(url, {
       method: 'GET',
       headers: { 
         "Content-Type": "application/json"
       },
-      credentials: "include",
+    credentials: "include",
     });
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
@@ -29,13 +29,13 @@ async function apiPost(path, data) {
   const url = `${API_BASE}${path}`;
   try {
     const res = await fetch(url, {
-      method: "POST",
+    method: "POST",
       headers: { 
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(data),
-      credentials: "include",
-    });
+    body: JSON.stringify(data),
+    credentials: "include",
+  });
     if (!res.ok) {
       const errorText = await res.text();
       throw new Error(`HTTP ${res.status}: ${errorText}`);
@@ -233,34 +233,95 @@ export default function App() {
 
   // Helper function to get YouTube embed URL
   const getYouTubeEmbedUrl = (url) => {
-    let videoId = '';
-    if (url.includes('youtube.com/watch?v=')) {
-      videoId = url.split('v=')[1].split('&')[0];
-    } else if (url.includes('youtu.be/')) {
-      videoId = url.split('youtu.be/')[1].split('?')[0];
+    if (!url || typeof url !== 'string') return '';
+    
+    try {
+      let videoId = '';
+      if (url.includes('youtube.com/watch?v=')) {
+        const parts = url.split('v=');
+        if (parts.length > 1) {
+          videoId = parts[1].split('&')[0];
+        }
+      } else if (url.includes('youtu.be/')) {
+        const parts = url.split('youtu.be/');
+        if (parts.length > 1) {
+          videoId = parts[1].split('?')[0];
+        }
+      }
+      
+      if (videoId) {
+        return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}`;
+      }
+      return '';
+    } catch (error) {
+      console.error('Error parsing YouTube URL:', error);
+      return '';
     }
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}`;
   };
 
   // Helper function to get Vimeo embed URL
   const getVimeoEmbedUrl = (url) => {
-    const videoId = url.split('vimeo.com/')[1].split('?')[0];
-    return `https://player.vimeo.com/video/${videoId}?autoplay=1&muted=1&loop=1`;
+    if (!url || typeof url !== 'string') return '';
+    
+    try {
+      const parts = url.split('vimeo.com/');
+      if (parts.length > 1) {
+        const videoId = parts[1].split('?')[0];
+        return `https://player.vimeo.com/video/${videoId}?autoplay=1&muted=1&loop=1`;
+      }
+      return '';
+    } catch (error) {
+      console.error('Error parsing Vimeo URL:', error);
+      return '';
+    }
+  };
+
+  // Helper function to get YouTube video ID
+  const getYouTubeVideoId = (url) => {
+    if (!url || typeof url !== 'string') return '';
+    
+    try {
+      if (url.includes('youtube.com/watch?v=')) {
+        const parts = url.split('v=');
+        if (parts.length > 1) {
+          return parts[1].split('&')[0];
+        }
+      } else if (url.includes('youtu.be/')) {
+        const parts = url.split('youtu.be/');
+        if (parts.length > 1) {
+          return parts[1].split('?')[0];
+        }
+      }
+      return '';
+    } catch (error) {
+      console.error('Error extracting YouTube video ID:', error);
+      return '';
+    }
   };
 
   // Helper function to get the primary media URL (video takes priority over image)
   const getPrimaryMediaUrl = (item) => {
-    if (item.video && item.video.trim() !== '') {
+    if (!item) return '';
+    
+    if (item.video && typeof item.video === 'string' && item.video.trim() !== '') {
       return item.video;
     }
-    return item.image;
+    
+    if (item.image && typeof item.image === 'string') {
+      return item.image;
+    }
+    
+    return '';
   };
 
   // Helper function to get the media type (video or image)
   const getMediaType = (item) => {
-    if (item.video && item.video.trim() !== '') {
+    if (!item) return 'image';
+    
+    if (item.video && typeof item.video === 'string' && item.video.trim() !== '') {
       return 'video';
     }
+    
     return 'image';
   };
 
@@ -450,12 +511,12 @@ export default function App() {
               )}
             </div>
           ) : (
-            <img
-              src={imageModalSrc}
-              alt="Full size"
-              className="max-w-full max-h-full object-contain rounded-lg"
-              onClick={(e) => e.stopPropagation()}
-            />
+          <img
+            src={imageModalSrc}
+            alt="Full size"
+            className="max-w-full max-h-full object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
           )}
           <button
             onClick={() => setShowImageModal(false)}
@@ -599,12 +660,12 @@ export default function App() {
           </div>
         ) : (
           getCurrentCategoryItems().map(item => (
-            <div
-              key={item.id}
-              className="bg-white rounded-lg shadow-sm border p-4 cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => setSelectedItem(item)}
-            >
-              <div className="flex gap-4">
+          <div
+            key={item.id}
+            className="bg-white rounded-lg shadow-sm border p-4 cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => setSelectedItem(item)}
+          >
+            <div className="flex gap-4">
                 {/* Item Image/Video */}
                 {getMediaType(item) === 'video' ? (
                   <div className="relative w-20 h-20 rounded-lg flex-shrink-0 bg-gray-200 flex items-center justify-center cursor-pointer"
@@ -614,9 +675,13 @@ export default function App() {
                        }}>
                     {(getPrimaryMediaUrl(item).includes('youtube.com') || getPrimaryMediaUrl(item).includes('youtu.be')) ? (
                       <img
-                        src={`https://img.youtube.com/vi/${getPrimaryMediaUrl(item).includes('youtube.com/watch?v=') ? getPrimaryMediaUrl(item).split('v=')[1].split('&')[0] : getPrimaryMediaUrl(item).split('youtu.be/')[1].split('?')[0]}/mqdefault.jpg`}
-                        alt={getText(item.name, language)}
+                        src={`https://img.youtube.com/vi/${getYouTubeVideoId(getPrimaryMediaUrl(item))}/mqdefault.jpg`}
+                alt={getText(item.name, language)}
                         className="w-full h-full object-cover rounded-lg"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gray-300 rounded-lg flex items-center justify-center"><span class="text-2xl">🎥</span></div>';
+                        }}
                       />
                     ) : getPrimaryMediaUrl(item).includes('vimeo.com') ? (
                       <div className="w-full h-full bg-gray-300 rounded-lg flex items-center justify-center">
@@ -641,58 +706,58 @@ export default function App() {
                     src={getPrimaryMediaUrl(item)}
                     alt={getText(item.name, language)}
                     className="w-20 h-20 object-cover rounded-lg flex-shrink-0 cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                onClick={(e) => {
+                  e.stopPropagation();
                       openMediaModal(getPrimaryMediaUrl(item));
-                    }}
-                  />
+                }}
+              />
                 )}
+              
+              {/* Item Details */}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-gray-800 mb-1">{getText(item.name, language)}</h3>
+                <p className="text-gray-600 text-sm mb-2 line-clamp-2">{getText(item.description, language)}</p>
+                <p className="text-orange-600 font-bold mb-3">€{item.price.toFixed(2)}</p>
                 
-                {/* Item Details */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-800 mb-1">{getText(item.name, language)}</h3>
-                  <p className="text-gray-600 text-sm mb-2 line-clamp-2">{getText(item.description, language)}</p>
-                  <p className="text-orange-600 font-bold mb-3">€{item.price.toFixed(2)}</p>
-                  
-                  {/* Quantity Controls */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          updateItemQuantity(item.id, -1);
-                        }}
-                        className="bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full transition-colors"
-                      >
-                        <Minus size={12} />
-                      </button>
-                      <span className="w-6 text-center font-medium text-sm">
-                        {getItemQuantity(item.id)}
-                      </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          updateItemQuantity(item.id, 1);
-                        }}
-                        className="bg-orange-500 hover:bg-orange-600 text-white p-1.5 rounded-full transition-colors"
-                      >
-                        <Plus size={12} />
-                      </button>
-                    </div>
+                {/* Quantity Controls */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        addItemToCart(item);
+                        updateItemQuantity(item.id, -1);
                       }}
-                      disabled={getItemQuantity(item.id) === 0}
-                      className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                      className="bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full transition-colors"
                     >
-                      {t.addToCart}
+                      <Minus size={12} />
+                    </button>
+                    <span className="w-6 text-center font-medium text-sm">
+                      {getItemQuantity(item.id)}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateItemQuantity(item.id, 1);
+                      }}
+                      className="bg-orange-500 hover:bg-orange-600 text-white p-1.5 rounded-full transition-colors"
+                    >
+                      <Plus size={12} />
                     </button>
                   </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addItemToCart(item);
+                    }}
+                    disabled={getItemQuantity(item.id) === 0}
+                    className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    {t.addToCart}
+                  </button>
                 </div>
               </div>
             </div>
+          </div>
           ))
         )}
       </main>
@@ -709,9 +774,13 @@ export default function App() {
                      }}>
                   {(getPrimaryMediaUrl(selectedItem).includes('youtube.com') || getPrimaryMediaUrl(selectedItem).includes('youtu.be')) ? (
                     <img
-                      src={`https://img.youtube.com/vi/${getPrimaryMediaUrl(selectedItem).includes('youtube.com/watch?v=') ? getPrimaryMediaUrl(selectedItem).split('v=')[1].split('&')[0] : getPrimaryMediaUrl(selectedItem).split('youtu.be/')[1].split('?')[0]}/maxresdefault.jpg`}
+                      src={`https://img.youtube.com/vi/${getYouTubeVideoId(getPrimaryMediaUrl(selectedItem))}/maxresdefault.jpg`}
                       alt={getText(selectedItem.name, language)}
                       className="w-full h-full object-cover rounded-t-2xl"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gray-300 rounded-t-2xl flex items-center justify-center"><span class="text-6xl">🎥</span></div>';
+                      }}
                     />
                   ) : getPrimaryMediaUrl(selectedItem).includes('vimeo.com') ? (
                     <div className="w-full h-full bg-gray-300 rounded-t-2xl flex items-center justify-center">
@@ -734,12 +803,12 @@ export default function App() {
               ) : (
                 <img
                   src={getPrimaryMediaUrl(selectedItem)}
-                  alt={getText(selectedItem.name, language)}
-                  className="w-full h-48 object-cover rounded-t-2xl cursor-pointer"
-                  onClick={() => {
+                alt={getText(selectedItem.name, language)}
+                className="w-full h-48 object-cover rounded-t-2xl cursor-pointer"
+                onClick={() => {
                     openMediaModal(getPrimaryMediaUrl(selectedItem));
-                  }}
-                />
+                }}
+              />
               )}
               <button
                 onClick={() => setSelectedItem(null)}
@@ -849,9 +918,13 @@ export default function App() {
                             <div className="relative w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0">
                               {(getPrimaryMediaUrl(item).includes('youtube.com') || getPrimaryMediaUrl(item).includes('youtu.be')) ? (
                                 <img
-                                  src={`https://img.youtube.com/vi/${getPrimaryMediaUrl(item).includes('youtube.com/watch?v=') ? getPrimaryMediaUrl(item).split('v=')[1].split('&')[0] : getPrimaryMediaUrl(item).split('youtu.be/')[1].split('?')[0]}/default.jpg`}
+                                  src={`https://img.youtube.com/vi/${getYouTubeVideoId(getPrimaryMediaUrl(item))}/default.jpg`}
                                   alt={getText(item.name, language)}
                                   className="w-full h-full object-cover rounded-lg"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gray-300 rounded-lg flex items-center justify-center"><span class="text-sm">🎥</span></div>';
+                                  }}
                                 />
                               ) : getPrimaryMediaUrl(item).includes('vimeo.com') ? (
                                 <div className="w-full h-full bg-gray-300 rounded-lg flex items-center justify-center">
@@ -872,9 +945,9 @@ export default function App() {
                           ) : (
                             <img
                               src={getPrimaryMediaUrl(item)}
-                              alt={getText(item.name, language)}
-                              className="w-12 h-12 object-cover rounded-lg flex-shrink-0"
-                            />
+                            alt={getText(item.name, language)}
+                            className="w-12 h-12 object-cover rounded-lg flex-shrink-0"
+                          />
                           )}
                           <div className="flex-1">
                             <h3 className="font-medium text-gray-800">{getText(item.name, language)}</h3>
