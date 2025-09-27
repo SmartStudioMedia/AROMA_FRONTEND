@@ -218,6 +218,22 @@ export default function App() {
     return videoExtensions.some(ext => urlLower.includes(ext)) || urlLower.includes('video');
   };
 
+  // Helper function to get the primary media URL (video takes priority over image)
+  const getPrimaryMediaUrl = (item) => {
+    if (item.video && item.video.trim() !== '') {
+      return item.video;
+    }
+    return item.image;
+  };
+
+  // Helper function to get the media type (video or image)
+  const getMediaType = (item) => {
+    if (item.video && item.video.trim() !== '') {
+      return 'video';
+    }
+    return 'image';
+  };
+
   // Helper function to open media modal
   const openMediaModal = (url) => {
     if (isVideoUrl(url)) {
@@ -534,16 +550,16 @@ export default function App() {
             >
               <div className="flex gap-4">
                 {/* Item Image/Video */}
-                {isVideoUrl(item.image || item.video) ? (
+                {getMediaType(item) === 'video' ? (
                   <div className="relative w-20 h-20 rounded-lg flex-shrink-0 bg-gray-200 flex items-center justify-center">
                     <video
-                      src={item.video || item.image}
+                      src={getPrimaryMediaUrl(item)}
                       className="w-full h-full object-cover rounded-lg"
                       muted
                       loop
                       onClick={(e) => {
                         e.stopPropagation();
-                        openMediaModal(item.video || item.image);
+                        openMediaModal(getPrimaryMediaUrl(item));
                       }}
                     />
                     <div className="absolute inset-0 bg-black bg-opacity-30 rounded-lg flex items-center justify-center">
@@ -554,12 +570,12 @@ export default function App() {
                   </div>
                 ) : (
                   <img
-                    src={item.image}
+                    src={getPrimaryMediaUrl(item)}
                     alt={getText(item.name, language)}
                     className="w-20 h-20 object-cover rounded-lg flex-shrink-0 cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
-                      openMediaModal(item.image);
+                      openMediaModal(getPrimaryMediaUrl(item));
                     }}
                   />
                 )}
@@ -618,15 +634,15 @@ export default function App() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="relative">
-              {isVideoUrl(selectedItem.image || selectedItem.video) ? (
+              {getMediaType(selectedItem) === 'video' ? (
                 <div className="relative w-full h-48 bg-gray-200 flex items-center justify-center">
                   <video
-                    src={selectedItem.video || selectedItem.image}
+                    src={getPrimaryMediaUrl(selectedItem)}
                     className="w-full h-full object-cover rounded-t-2xl cursor-pointer"
                     muted
                     loop
                     onClick={() => {
-                      openMediaModal(selectedItem.video || selectedItem.image);
+                      openMediaModal(getPrimaryMediaUrl(selectedItem));
                     }}
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-30 rounded-t-2xl flex items-center justify-center">
@@ -637,11 +653,11 @@ export default function App() {
                 </div>
               ) : (
                 <img
-                  src={selectedItem.image}
+                  src={getPrimaryMediaUrl(selectedItem)}
                   alt={getText(selectedItem.name, language)}
                   className="w-full h-48 object-cover rounded-t-2xl cursor-pointer"
                   onClick={() => {
-                    openMediaModal(selectedItem.image);
+                    openMediaModal(getPrimaryMediaUrl(selectedItem));
                   }}
                 />
               )}
@@ -749,10 +765,10 @@ export default function App() {
                       <div key={item.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
                         <div className="flex items-center gap-3 flex-1">
                           {/* Item Thumbnail */}
-                          {isVideoUrl(item.image || item.video) ? (
+                          {getMediaType(item) === 'video' ? (
                             <div className="relative w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0">
                               <video
-                                src={item.video || item.image}
+                                src={getPrimaryMediaUrl(item)}
                                 className="w-full h-full object-cover rounded-lg"
                                 muted
                                 loop
@@ -763,7 +779,7 @@ export default function App() {
                             </div>
                           ) : (
                             <img
-                              src={item.image}
+                              src={getPrimaryMediaUrl(item)}
                               alt={getText(item.name, language)}
                               className="w-12 h-12 object-cover rounded-lg flex-shrink-0"
                             />
