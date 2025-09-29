@@ -39,6 +39,35 @@
           image-rendering: crisp-edges;
         }
       }
+      
+      /* Mobile video iframe optimizations */
+      @media (max-width: 768px) {
+        iframe {
+          -webkit-transform: translateZ(0);
+          transform: translateZ(0);
+          -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
+          will-change: transform;
+        }
+        
+        /* Prevent video corruption on mobile */
+        iframe[src*="youtube.com"] {
+          -webkit-transform: translate3d(0, 0, 0);
+          transform: translate3d(0, 0, 0);
+          -webkit-perspective: 1000;
+          perspective: 1000;
+        }
+      }
+      
+      /* Force hardware acceleration for mobile videos */
+      @media (max-width: 768px) {
+        .video-container {
+          -webkit-transform: translateZ(0);
+          transform: translateZ(0);
+          -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
+        }
+      }
     </style>
     
     <!-- Favicon -->
