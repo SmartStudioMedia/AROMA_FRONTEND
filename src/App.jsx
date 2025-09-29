@@ -232,6 +232,12 @@ export default function App() {
     return false;
   };
 
+  // Helper function to detect if URL is a YouTube Short
+  const isYouTubeShort = (url) => {
+    if (!url || typeof url !== 'string') return false;
+    return url.includes('youtube.com/shorts/') || url.includes('youtu.be/') && url.includes('shorts');
+  };
+
   // Helper function to detect mobile devices and problematic browsers
   const isMobileDevice = () => {
     const userAgent = navigator.userAgent;
@@ -279,8 +285,11 @@ export default function App() {
       const videoId = getYouTubeVideoId(url);
       
       if (videoId) {
-        // Use different parameters for mobile vs desktop to avoid codec issues
-        if (isMobileDevice()) {
+        // Special handling for YouTube Shorts
+        if (isYouTubeShort(url)) {
+          // YouTube Shorts specific parameters to prevent corruption
+          return `https://www.youtube.com/embed/${videoId}?autoplay=0&mute=1&rel=0&modestbranding=1&fs=1&cc_load_policy=0&iv_load_policy=3&enablejsapi=1&origin=${window.location.origin}&playsinline=1&controls=1&disablekb=1&loop=0`;
+        } else if (isMobileDevice()) {
           // Mobile-optimized parameters to prevent corruption
           return `https://www.youtube.com/embed/${videoId}?autoplay=0&mute=1&rel=0&modestbranding=1&fs=1&cc_load_policy=0&iv_load_policy=3&enablejsapi=1&origin=${window.location.origin}&playsinline=1&controls=1`;
         } else {
@@ -370,6 +379,12 @@ export default function App() {
   const testShortsId = getYouTubeVideoId(testShortsUrl);
   console.log('Test result - Shorts ID:', testShortsId);
   
+  console.log('Testing YouTube Shorts detection:', {
+    url: testShortsUrl,
+    isShort: isYouTubeShort(testShortsUrl),
+    embedUrl: getYouTubeEmbedUrl(testShortsUrl)
+  });
+  
   console.log('Test thumbnail URL:', `https://img.youtube.com/vi/${testVideoId}/mqdefault.jpg`);
   
   // Test if the thumbnail URL actually works
@@ -430,8 +445,10 @@ export default function App() {
       console.log('Opening video modal:', {
         url: url,
         isMobile: isMobileDevice(),
+        isYouTubeShort: isYouTubeShort(url),
         userAgent: navigator.userAgent,
-        screenWidth: window.innerWidth
+        screenWidth: window.innerWidth,
+        willUseDirectLink: isMobileDevice() || isYouTubeShort(url)
       });
     } else {
       setImageModalSrc(url);
@@ -610,13 +627,19 @@ export default function App() {
                   )}
                   
                   {/* Force mobile users to use direct link - no iframe at all */}
-                  {isMobileDevice() ? (
+                  {/* Also force direct link for YouTube Shorts on any device */}
+                  {(isMobileDevice() || isYouTubeShort(videoModalSrc)) ? (
                     <div className="w-full h-96 bg-gradient-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center text-white">
                       <div className="text-center p-6">
-                        <div className="text-8xl mb-6">📱</div>
-                        <h3 className="text-2xl font-bold mb-3">Mobile Video Player</h3>
+                        <div className="text-8xl mb-6">{isYouTubeShort(videoModalSrc) ? '🎬' : '📱'}</div>
+                        <h3 className="text-2xl font-bold mb-3">
+                          {isYouTubeShort(videoModalSrc) ? 'YouTube Shorts Player' : 'Mobile Video Player'}
+                        </h3>
                         <p className="text-base opacity-90 mb-8 leading-relaxed">
-                          To prevent video corruption on mobile devices, please open this video directly in the YouTube app for the best viewing experience.
+                          {isYouTubeShort(videoModalSrc) 
+                            ? 'YouTube Shorts work best when opened directly in the YouTube app to prevent video corruption and ensure proper playback.'
+                            : 'To prevent video corruption on mobile devices, please open this video directly in the YouTube app for the best viewing experience.'
+                          }
                         </p>
                         <div className="space-y-4">
                           <button
