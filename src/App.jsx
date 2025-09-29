@@ -70,6 +70,7 @@ export default function App() {
   const [videoModalSrc, setVideoModalSrc] = useState('');
   const [modalType, setModalType] = useState('image'); // 'image' or 'video'
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [itemQuantities, setItemQuantities] = useState({});
   const [menuData, setMenuData] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -239,7 +240,8 @@ export default function App() {
       const videoId = getYouTubeVideoId(url);
       
       if (videoId) {
-        return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}`;
+        // Use more stable embed parameters to avoid decoding issues
+        return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&rel=0&modestbranding=1&fs=1&cc_load_policy=0&iv_load_policy=3&start=0&end=0&enablejsapi=1&origin=${window.location.origin}`;
       }
       return '';
     } catch (error) {
@@ -377,6 +379,7 @@ export default function App() {
       setVideoModalSrc(url);
       setModalType('video');
       setIsVideoPlaying(false); // Reset video playing state
+      setIsLoading(true); // Reset loading state
     } else {
       setImageModalSrc(url);
       setModalType('image');
@@ -495,6 +498,44 @@ export default function App() {
     const isYouTube = videoModalSrc.includes('youtube.com') || videoModalSrc.includes('youtu.be');
     const isVimeo = videoModalSrc.includes('vimeo.com');
     
+    // Fallback function to open video in new tab if embed fails
+    const openVideoInNewTab = () => {
+      window.open(videoModalSrc, '_blank', 'noopener,noreferrer');
+    };
+    
+    // Timeout mechanism to detect slow loading
+    const [iframeTimeout, setIframeTimeout] = useState(null);
+    
+    useEffect(() => {
+      if (modalType === 'video' && isYouTube) {
+        const timeout = setTimeout(() => {
+          console.log('YouTube iframe taking too long to load, showing fallback');
+          const iframe = document.querySelector('iframe[src*="youtube.com/embed"]');
+          if (iframe && iframe.offsetHeight === 0) {
+            iframe.style.display = 'none';
+            iframe.parentElement.innerHTML = `
+              <div class="w-full h-96 bg-gray-800 rounded-lg flex items-center justify-center text-white">
+                <div class="text-center">
+                  <div class="text-4xl mb-4">⏱️</div>
+                  <p class="text-lg font-semibold mb-2">Loading Timeout</p>
+                  <p class="text-sm opacity-75 mb-4">Video is taking too long to load. Try opening it directly.</p>
+                  <button onclick="window.open('${videoModalSrc}', '_blank', 'noopener,noreferrer')" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+                    Open in YouTube
+                  </button>
+                </div>
+              </div>
+            `;
+          }
+        }, 10000); // 10 second timeout
+        
+        setIframeTimeout(timeout);
+        
+        return () => {
+          if (timeout) clearTimeout(timeout);
+        };
+      }
+    }, [modalType, isYouTube, videoModalSrc]);
+    
     return (
       <div 
         className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50"
@@ -504,14 +545,62 @@ export default function App() {
           {modalType === 'video' ? (
             <div className="relative">
               {isYouTube ? (
-                <iframe
-                  src={getYouTubeEmbedUrl(videoModalSrc)}
-                  className="w-full h-96 rounded-lg"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  title="YouTube video"
-                />
+                <div className="relative">
+                  {isLoading && (
+                    <div className="absolute inset-0 bg-gray-800 rounded-lg flex items-center justify-center text-white z-10">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+                        <p className="text-lg font-semibold">Loading Video...</p>
+                        <p className="text-sm opacity-75">This may take a moment</p>
+                      </div>
+                    </div>
+                  )}
+                  <iframe
+                    src={getYouTubeEmbedUrl(videoModalSrc)}
+                    className="w-full h-96 rounded-lg"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    title="YouTube video"
+                    loading="eager"
+                    onLoad={(e) => {
+                      console.log('YouTube iframe loaded successfully');
+                      setIsLoading(false);
+                      // Clear timeout if iframe loads successfully
+                      if (iframeTimeout) {
+                        clearTimeout(iframeTimeout);
+                        setIframeTimeout(null);
+                      }
+                    }}
+                  onError={(e) => {
+                    console.log('YouTube iframe failed to load, showing fallback options');
+                    // Clear timeout
+                    if (iframeTimeout) {
+                      clearTimeout(iframeTimeout);
+                      setIframeTimeout(null);
+                    }
+                    // Hide iframe and show error message with fallback options
+                    e.target.style.display = 'none';
+                    e.target.parentElement.innerHTML = `
+                      <div class="w-full h-96 bg-gray-800 rounded-lg flex items-center justify-center text-white">
+                        <div class="text-center">
+                          <div class="text-4xl mb-4">🎥</div>
+                          <p class="text-lg font-semibold mb-2">Video Playback Error</p>
+                          <p class="text-sm opacity-75 mb-4">Unable to load video. This may be due to codec issues or connection problems.</p>
+                          <div class="flex gap-3 justify-center">
+                            <button onclick="window.open('${videoModalSrc}', '_blank', 'noopener,noreferrer')" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+                              Open in YouTube
+                            </button>
+                            <button onclick="window.location.reload()" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors">
+                              Retry
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    `;
+                  }}
+                  />
+                </div>
               ) : isVimeo ? (
                 <iframe
                   src={getVimeoEmbedUrl(videoModalSrc)}
