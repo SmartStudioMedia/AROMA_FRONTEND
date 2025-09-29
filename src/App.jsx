@@ -241,7 +241,34 @@ export default function App() {
     // Also detect browsers known to have YouTube iframe issues
     const hasVideoIssues = /iPhone|iPad|iPod|Android.*Chrome\/[0-9]{2}\.[0-9]|Safari.*Version\/[0-9]{2}\.[0-9]|Mobile.*Safari/i.test(userAgent);
     
-    return isMobile || hasVideoIssues;
+    // Check for touch capability (mobile indicator)
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    
+    // Check for mobile viewport
+    const isMobileViewport = window.innerWidth <= 768 || window.innerHeight <= 1024;
+    
+    // Force mobile mode for any of these conditions
+    const forceMobile = isMobile || hasVideoIssues || (isTouchDevice && isMobileViewport);
+    
+    // Debug: Force mobile mode with URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const forceMobileParam = urlParams.get('forceMobile');
+    const finalMobile = forceMobile || forceMobileParam === 'true';
+    
+    console.log('Mobile detection:', {
+      userAgent,
+      isMobile,
+      hasVideoIssues,
+      isTouchDevice,
+      isMobileViewport,
+      screenWidth: window.innerWidth,
+      screenHeight: window.innerHeight,
+      forceMobile,
+      forceMobileParam,
+      finalMobile
+    });
+    
+    return finalMobile;
   };
 
   // Helper function to get YouTube embed URL
@@ -582,43 +609,82 @@ export default function App() {
                     </div>
                   )}
                   
-                  {/* Mobile fallback - show direct link instead of iframe */}
+                  {/* Force mobile users to use direct link - no iframe at all */}
                   {isMobileDevice() ? (
-                    <div className="w-full h-96 bg-gray-900 rounded-lg flex items-center justify-center text-white">
+                    <div className="w-full h-96 bg-gradient-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center text-white">
                       <div className="text-center p-6">
-                        <div className="text-6xl mb-4">📱</div>
-                        <h3 className="text-xl font-bold mb-2">Mobile Video Player</h3>
-                        <p className="text-sm opacity-75 mb-6">For the best viewing experience on mobile, we recommend opening the video directly in YouTube.</p>
-                        <div className="space-y-3">
-                          <button
-                            onClick={() => window.open(videoModalSrc, '_blank', 'noopener,noreferrer')}
-                            className="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
-                          >
-                            <span>▶️</span>
-                            Open in YouTube
-                          </button>
+                        <div className="text-8xl mb-6">📱</div>
+                        <h3 className="text-2xl font-bold mb-3">Mobile Video Player</h3>
+                        <p className="text-base opacity-90 mb-8 leading-relaxed">
+                          To prevent video corruption on mobile devices, please open this video directly in the YouTube app for the best viewing experience.
+                        </p>
+                        <div className="space-y-4">
                           <button
                             onClick={() => {
-                              // Try iframe as fallback
-                              const iframeContainer = document.querySelector('.mobile-iframe-container');
-                              if (iframeContainer) {
-                                iframeContainer.innerHTML = `
-                                  <iframe
-                                    src="${getYouTubeEmbedUrl(videoModalSrc)}"
-                                    className="w-full h-96 rounded-lg"
-                                    frameBorder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                    allowFullScreen
-                                    title="YouTube video"
-                                    loading="eager"
-                                  ></iframe>
-                                `;
-                              }
+                              // Try to open in YouTube app first, fallback to browser
+                              const videoId = getYouTubeVideoId(videoModalSrc);
+                              const youtubeAppUrl = `vnd.youtube:${videoId}`;
+                              const youtubeWebUrl = videoModalSrc;
+                              
+                              // Try YouTube app first
+                              window.location.href = youtubeAppUrl;
+                              
+                              // Fallback to web after a short delay
+                              setTimeout(() => {
+                                window.open(youtubeWebUrl, '_blank', 'noopener,noreferrer');
+                              }, 1000);
                             }}
-                            className="w-full bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+                            className="w-full bg-white text-red-600 hover:bg-gray-100 px-6 py-4 rounded-lg font-bold text-lg transition-colors flex items-center justify-center gap-3 shadow-lg"
                           >
-                            Try Embedded Player
+                            <span className="text-2xl">▶️</span>
+                            Open in YouTube App
                           </button>
+                          
+                          <button
+                            onClick={() => window.open(videoModalSrc, '_blank', 'noopener,noreferrer')}
+                            className="w-full bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                          >
+                            <span>🌐</span>
+                            Open in Browser
+                          </button>
+                          
+                          {/* Debug button - only show in development */}
+                          {window.location.hostname === 'localhost' || window.location.hostname.includes('dev') ? (
+                            <button
+                              onClick={() => {
+                                // Force show iframe for testing
+                                const container = document.querySelector('.mobile-iframe-container');
+                                if (container) {
+                                  container.innerHTML = `
+                                    <div class="w-full h-96 bg-gray-800 rounded-lg flex items-center justify-center text-white">
+                                      <div class="text-center">
+                                        <div class="text-4xl mb-4">⚠️</div>
+                                        <p class="text-lg font-semibold mb-2">Testing Embedded Player</p>
+                                        <p class="text-sm opacity-75 mb-4">This may show corruption on mobile</p>
+                                        <iframe
+                                          src="${getYouTubeEmbedUrl(videoModalSrc)}"
+                                          className="w-full h-96 rounded-lg"
+                                          frameBorder="0"
+                                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                          allowFullScreen
+                                          title="YouTube video"
+                                          loading="eager"
+                                        ></iframe>
+                                      </div>
+                                    </div>
+                                  `;
+                                  container.classList.remove('hidden');
+                                }
+                              }}
+                              className="w-full bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors text-sm"
+                            >
+                              🧪 Test Embedded Player (Debug)
+                            </button>
+                          ) : null}
+                        </div>
+                        
+                        <div className="mt-6 text-xs opacity-75">
+                          <p>This prevents video corruption issues on mobile devices</p>
                         </div>
                       </div>
                     </div>
