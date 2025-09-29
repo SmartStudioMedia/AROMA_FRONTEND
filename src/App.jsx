@@ -49,7 +49,10 @@ async function apiPost(path, data) {
 
 // Helper function to get translated text
 const getText = (obj, lang) => {
-  if (typeof obj === 'string') return obj;
+  if (typeof obj === 'string') {
+    // Try menu item translation first
+    return translateMenuItem(obj, lang);
+  }
   return obj?.[lang] || obj?.en || '';
 };
 
@@ -186,6 +189,99 @@ function translateCategory(categoryName, lang = 'en') {
   
   // If no translation found, return the original name
   return categoryName;
+}
+
+// Menu item translation mapping for common food terms
+const itemTranslations = {
+  'Burger': { en: 'Burger', es: 'Hamburguesa', it: 'Burger', fr: 'Burger', de: 'Burger', ru: 'Бургер', pt: 'Hambúrguer', nl: 'Burger', pl: 'Burger' },
+  'Pizza': { en: 'Pizza', es: 'Pizza', it: 'Pizza', fr: 'Pizza', de: 'Pizza', ru: 'Пицца', pt: 'Pizza', nl: 'Pizza', pl: 'Pizza' },
+  'Pasta': { en: 'Pasta', es: 'Pasta', it: 'Pasta', fr: 'Pâtes', de: 'Pasta', ru: 'Паста', pt: 'Massa', nl: 'Pasta', pl: 'Makaron' },
+  'Salad': { en: 'Salad', es: 'Ensalada', it: 'Insalata', fr: 'Salade', de: 'Salat', ru: 'Салат', pt: 'Salada', nl: 'Salade', pl: 'Sałatka' },
+  'Soup': { en: 'Soup', es: 'Sopa', it: 'Zuppa', fr: 'Soupe', de: 'Suppe', ru: 'Суп', pt: 'Sopa', nl: 'Soep', pl: 'Zupa' },
+  'Chicken': { en: 'Chicken', es: 'Pollo', it: 'Pollo', fr: 'Poulet', de: 'Hähnchen', ru: 'Курица', pt: 'Frango', nl: 'Kip', pl: 'Kurczak' },
+  'Beef': { en: 'Beef', es: 'Carne de Res', it: 'Manzo', fr: 'Bœuf', de: 'Rindfleisch', ru: 'Говядина', pt: 'Carne de Vaca', nl: 'Rundvlees', pl: 'Wołowina' },
+  'Fish': { en: 'Fish', es: 'Pescado', it: 'Pesce', fr: 'Poisson', de: 'Fisch', ru: 'Рыба', pt: 'Peixe', nl: 'Vis', pl: 'Ryba' },
+  'Vegetarian': { en: 'Vegetarian', es: 'Vegetariano', it: 'Vegetariano', fr: 'Végétarien', de: 'Vegetarisch', ru: 'Вегетарианский', pt: 'Vegetariano', nl: 'Vegetarisch', pl: 'Wegetariański' },
+  'Vegan': { en: 'Vegan', es: 'Vegano', it: 'Vegano', fr: 'Végan', de: 'Vegan', ru: 'Веганский', pt: 'Vegano', nl: 'Veganistisch', pl: 'Wegański' },
+  'Spicy': { en: 'Spicy', es: 'Picante', it: 'Piccante', fr: 'Épicé', de: 'Scharf', ru: 'Острый', pt: 'Picante', nl: 'Pittig', pl: 'Ostry' },
+  'Cheese': { en: 'Cheese', es: 'Queso', it: 'Formaggio', fr: 'Fromage', de: 'Käse', ru: 'Сыр', pt: 'Queijo', nl: 'Kaas', pl: 'Ser' },
+  'Tomato': { en: 'Tomato', es: 'Tomate', it: 'Pomodoro', fr: 'Tomate', de: 'Tomate', ru: 'Помидор', pt: 'Tomate', nl: 'Tomaat', pl: 'Pomidor' },
+  'Onion': { en: 'Onion', es: 'Cebolla', it: 'Cipolla', fr: 'Oignon', de: 'Zwiebel', ru: 'Лук', pt: 'Cebola', nl: 'Ui', pl: 'Cebula' },
+  'Garlic': { en: 'Garlic', es: 'Ajo', it: 'Aglio', fr: 'Ail', de: 'Knoblauch', ru: 'Чеснок', pt: 'Alho', nl: 'Knoflook', pl: 'Czosnek' },
+  'Pepper': { en: 'Pepper', es: 'Pimienta', it: 'Pepe', fr: 'Poivre', de: 'Pfeffer', ru: 'Перец', pt: 'Pimenta', nl: 'Peper', pl: 'Pieprz' },
+  'Salt': { en: 'Salt', es: 'Sal', it: 'Sale', fr: 'Sel', de: 'Salz', ru: 'Соль', pt: 'Sal', nl: 'Zout', pl: 'Sól' },
+  'Oil': { en: 'Oil', es: 'Aceite', it: 'Olio', fr: 'Huile', de: 'Öl', ru: 'Масло', pt: 'Óleo', nl: 'Olie', pl: 'Olej' },
+  'Bread': { en: 'Bread', es: 'Pan', it: 'Pane', fr: 'Pain', de: 'Brot', ru: 'Хлеб', pt: 'Pão', nl: 'Brood', pl: 'Chleb' },
+  'Rice': { en: 'Rice', es: 'Arroz', it: 'Riso', fr: 'Riz', de: 'Reis', ru: 'Рис', pt: 'Arroz', nl: 'Rijst', pl: 'Ryż' },
+  'Potato': { en: 'Potato', es: 'Patata', it: 'Patata', fr: 'Pomme de terre', de: 'Kartoffel', ru: 'Картофель', pt: 'Batata', nl: 'Aardappel', pl: 'Ziemniak' },
+  'Carrot': { en: 'Carrot', es: 'Zanahoria', it: 'Carota', fr: 'Carotte', de: 'Karotte', ru: 'Морковь', pt: 'Cenoura', nl: 'Wortel', pl: 'Marchew' },
+  'Lettuce': { en: 'Lettuce', es: 'Lechuga', it: 'Lattuga', fr: 'Laitue', de: 'Kopfsalat', ru: 'Салат', pt: 'Alface', nl: 'Sla', pl: 'Sałata' },
+  'Cucumber': { en: 'Cucumber', es: 'Pepino', it: 'Cetriolo', fr: 'Concombre', de: 'Gurke', ru: 'Огурец', pt: 'Pepino', nl: 'Komkommer', pl: 'Ogórek' },
+  'Mushroom': { en: 'Mushroom', es: 'Champiñón', it: 'Funghi', fr: 'Champignon', de: 'Pilz', ru: 'Гриб', pt: 'Cogumelo', nl: 'Champignon', pl: 'Grzyb' },
+  'Bacon': { en: 'Bacon', es: 'Tocino', it: 'Pancetta', fr: 'Bacon', de: 'Speck', ru: 'Бекон', pt: 'Bacon', nl: 'Spek', pl: 'Bekon' },
+  'Ham': { en: 'Ham', es: 'Jamón', it: 'Prosciutto', fr: 'Jambon', de: 'Schinken', ru: 'Ветчина', pt: 'Presunto', nl: 'Ham', pl: 'Szynka' },
+  'Sausage': { en: 'Sausage', es: 'Salchicha', it: 'Salsiccia', fr: 'Saucisse', de: 'Wurst', ru: 'Колбаса', pt: 'Salsicha', nl: 'Worst', pl: 'Kiełbasa' },
+  'Egg': { en: 'Egg', es: 'Huevo', it: 'Uovo', fr: 'Œuf', de: 'Ei', ru: 'Яйцо', pt: 'Ovo', nl: 'Ei', pl: 'Jajko' },
+  'Milk': { en: 'Milk', es: 'Leche', it: 'Latte', fr: 'Lait', de: 'Milch', ru: 'Молоко', pt: 'Leite', nl: 'Melk', pl: 'Mleko' },
+  'Cream': { en: 'Cream', es: 'Crema', it: 'Panna', fr: 'Crème', de: 'Sahne', ru: 'Сливки', pt: 'Creme', nl: 'Room', pl: 'Śmietana' },
+  'Butter': { en: 'Butter', es: 'Mantequilla', it: 'Burro', fr: 'Beurre', de: 'Butter', ru: 'Масло', pt: 'Manteiga', nl: 'Boter', pl: 'Masło' },
+  'Sugar': { en: 'Sugar', es: 'Azúcar', it: 'Zucchero', fr: 'Sucre', de: 'Zucker', ru: 'Сахар', pt: 'Açúcar', nl: 'Suiker', pl: 'Cukier' },
+  'Honey': { en: 'Honey', es: 'Miel', it: 'Miele', fr: 'Miel', de: 'Honig', ru: 'Мёд', pt: 'Mel', nl: 'Honing', pl: 'Miód' },
+  'Chocolate': { en: 'Chocolate', es: 'Chocolate', it: 'Cioccolato', fr: 'Chocolat', de: 'Schokolade', ru: 'Шоколад', pt: 'Chocolate', nl: 'Chocolade', pl: 'Czekolada' },
+  'Vanilla': { en: 'Vanilla', es: 'Vainilla', it: 'Vaniglia', fr: 'Vanille', de: 'Vanille', ru: 'Ваниль', pt: 'Baunilha', nl: 'Vanille', pl: 'Wanilia' },
+  'Strawberry': { en: 'Strawberry', es: 'Fresa', it: 'Fragola', fr: 'Fraise', de: 'Erdbeere', ru: 'Клубника', pt: 'Morango', nl: 'Aardbei', pl: 'Truskawka' },
+  'Apple': { en: 'Apple', es: 'Manzana', it: 'Mela', fr: 'Pomme', de: 'Apfel', ru: 'Яблоко', pt: 'Maçã', nl: 'Appel', pl: 'Jabłko' },
+  'Banana': { en: 'Banana', es: 'Plátano', it: 'Banana', fr: 'Banane', de: 'Banane', ru: 'Банан', pt: 'Banana', nl: 'Banaan', pl: 'Banan' },
+  'Orange': { en: 'Orange', es: 'Naranja', it: 'Arancia', fr: 'Orange', de: 'Orange', ru: 'Апельсин', pt: 'Laranja', nl: 'Sinaasappel', pl: 'Pomarańcza' },
+  'Lemon': { en: 'Lemon', es: 'Limón', it: 'Limone', fr: 'Citron', de: 'Zitrone', ru: 'Лимон', pt: 'Limão', nl: 'Citroen', pl: 'Cytryna' },
+  'Coffee': { en: 'Coffee', es: 'Café', it: 'Caffè', fr: 'Café', de: 'Kaffee', ru: 'Кофе', pt: 'Café', nl: 'Koffie', pl: 'Kawa' },
+  'Tea': { en: 'Tea', es: 'Té', it: 'Tè', fr: 'Thé', de: 'Tee', ru: 'Чай', pt: 'Chá', nl: 'Thee', pl: 'Herbata' },
+  'Water': { en: 'Water', es: 'Agua', it: 'Acqua', fr: 'Eau', de: 'Wasser', ru: 'Вода', pt: 'Água', nl: 'Water', pl: 'Woda' },
+  'Juice': { en: 'Juice', es: 'Jugo', it: 'Succo', fr: 'Jus', de: 'Saft', ru: 'Сок', pt: 'Suco', nl: 'Sap', pl: 'Sok' },
+  'Wine': { en: 'Wine', es: 'Vino', it: 'Vino', fr: 'Vin', de: 'Wein', ru: 'Вино', pt: 'Vinho', nl: 'Wijn', pl: 'Wino' },
+  'Beer': { en: 'Beer', es: 'Cerveza', it: 'Birra', fr: 'Bière', de: 'Bier', ru: 'Пиво', pt: 'Cerveja', nl: 'Bier', pl: 'Piwo' },
+  'Cake': { en: 'Cake', es: 'Pastel', it: 'Torta', fr: 'Gâteau', de: 'Kuchen', ru: 'Торт', pt: 'Bolo', nl: 'Taart', pl: 'Ciasto' },
+  'Cookie': { en: 'Cookie', es: 'Galleta', it: 'Biscotto', fr: 'Biscuit', de: 'Keks', ru: 'Печенье', pt: 'Biscoito', nl: 'Koekje', pl: 'Ciastko' },
+  'Ice Cream': { en: 'Ice Cream', es: 'Helado', it: 'Gelato', fr: 'Glace', de: 'Eis', ru: 'Мороженое', pt: 'Sorvete', nl: 'IJs', pl: 'Lody' },
+  'Classic': { en: 'Classic', es: 'Clásico', it: 'Classico', fr: 'Classique', de: 'Klassisch', ru: 'Классический', pt: 'Clássico', nl: 'Klassiek', pl: 'Klasyczny' },
+  'Special': { en: 'Special', es: 'Especial', it: 'Speciale', fr: 'Spécial', de: 'Spezial', ru: 'Особый', pt: 'Especial', nl: 'Speciaal', pl: 'Specjalny' },
+  'Deluxe': { en: 'Deluxe', es: 'Deluxe', it: 'Deluxe', fr: 'Deluxe', de: 'Deluxe', ru: 'Делюкс', pt: 'Deluxe', nl: 'Deluxe', pl: 'Deluxe' },
+  'Premium': { en: 'Premium', es: 'Premium', it: 'Premium', fr: 'Premium', de: 'Premium', ru: 'Премиум', pt: 'Premium', nl: 'Premium', pl: 'Premium' },
+  'Fresh': { en: 'Fresh', es: 'Fresco', it: 'Fresco', fr: 'Frais', de: 'Frisch', ru: 'Свежий', pt: 'Fresco', nl: 'Vers', pl: 'Świeży' },
+  'Grilled': { en: 'Grilled', es: 'A la parrilla', it: 'Grigliato', fr: 'Grillé', de: 'Gegrillt', ru: 'Жареный', pt: 'Grelhado', nl: 'Gegrild', pl: 'Grillowany' },
+  'Fried': { en: 'Fried', es: 'Frito', it: 'Fritto', fr: 'Frit', de: 'Gebraten', ru: 'Жареный', pt: 'Frito', nl: 'Gebakken', pl: 'Smażony' },
+  'Baked': { en: 'Baked', es: 'Horneado', it: 'Cotto al forno', fr: 'Cuit au four', de: 'Gebacken', ru: 'Запеченный', pt: 'Assado', nl: 'Gebakken', pl: 'Pieczony' },
+  'Steamed': { en: 'Steamed', es: 'Al vapor', it: 'Al vapore', fr: 'Cuit à la vapeur', de: 'Gedämpft', ru: 'На пару', pt: 'No vapor', nl: 'Gestoomd', pl: 'Gotowany na parze' },
+  'Raw': { en: 'Raw', es: 'Crudo', it: 'Crudo', fr: 'Cru', de: 'Roh', ru: 'Сырой', pt: 'Cru', nl: 'Rauw', pl: 'Surowe' },
+  'Hot': { en: 'Hot', es: 'Caliente', it: 'Caldo', fr: 'Chaud', de: 'Heiß', ru: 'Горячий', pt: 'Quente', nl: 'Heet', pl: 'Gorący' },
+  'Cold': { en: 'Cold', es: 'Frío', it: 'Freddo', fr: 'Froid', de: 'Kalt', ru: 'Холодный', pt: 'Frio', nl: 'Koud', pl: 'Zimny' },
+  'Sweet': { en: 'Sweet', es: 'Dulce', it: 'Dolce', fr: 'Sucré', de: 'Süß', ru: 'Сладкий', pt: 'Doce', nl: 'Zoet', pl: 'Słodki' },
+  'Sour': { en: 'Sour', es: 'Agrio', it: 'Acido', fr: 'Acide', de: 'Sauer', ru: 'Кислый', pt: 'Azedo', nl: 'Zuur', pl: 'Kwaśny' },
+  'Bitter': { en: 'Bitter', es: 'Amargo', it: 'Amaro', fr: 'Amer', de: 'Bitter', ru: 'Горький', pt: 'Amargo', nl: 'Bitter', pl: 'Gorzki' },
+  'Salty': { en: 'Salty', es: 'Salado', it: 'Salato', fr: 'Salé', de: 'Salzig', ru: 'Соленый', pt: 'Salgado', nl: 'Zout', pl: 'Słony' }
+};
+
+// Helper function to translate menu item names
+function translateMenuItem(itemName, lang = 'en') {
+  if (typeof itemName === 'string') {
+    // Try to find exact match first
+    if (itemTranslations[itemName]) {
+      return itemTranslations[itemName][lang] || itemTranslations[itemName].en;
+    }
+    
+    // Try to find partial matches for compound names
+    const normalizedName = itemName.toLowerCase();
+    for (const [key, translations] of Object.entries(itemTranslations)) {
+      if (normalizedName.includes(key.toLowerCase())) {
+        return translations[lang] || translations.en;
+      }
+    }
+    
+    return itemName; // Return original if no translation found
+  }
+  
+  // If it's already an object, use the existing translation system
+  return itemName[lang] || itemName.en || itemName;
 }
 
 export default function App() {
@@ -1574,9 +1670,10 @@ export default function App() {
 
       {/* Customer Form Modal */}
       {showCustomerForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" style={{zIndex: 9999}}>
-          <div className="bg-white rounded-2xl max-w-md w-full">
-            <div className="p-6 border-b">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50" style={{zIndex: 9999}}>
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[95vh] sm:max-h-[90vh] flex flex-col">
+            {/* Fixed Header */}
+            <div className="p-6 border-b flex-shrink-0">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-gray-800">Complete Your Order</h2>
                 <button
@@ -1588,7 +1685,9 @@ export default function App() {
               </div>
             </div>
             
-            <div className="p-6">
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto cart-scroll">
+              <div className="p-6">
               <div className="mb-6">
                 <h3 className="font-medium text-gray-800 mb-4">Order Summary</h3>
                 <div className="bg-gray-50 rounded-lg p-4 space-y-2">
@@ -1661,6 +1760,11 @@ export default function App() {
                 </div>
               </div>
 
+              </div>
+            </div>
+            
+            {/* Fixed Footer with Confirm Button */}
+            <div className="border-t bg-white p-6 flex-shrink-0">
               <div className="space-y-3">
                 <button
                   onClick={() => setShowCustomerForm(false)}
