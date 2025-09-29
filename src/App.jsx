@@ -841,9 +841,8 @@ export default function App() {
                     style={{
                       WebkitPlaysInline: true,
                       playsInline: true,
-                      webkit-playsinline: true,
-                      imageRendering: 'crisp-edges',
-                      imageRendering: '-webkit-optimize-contrast'
+                      'webkit-playsinline': true,
+                      imageRendering: 'crisp-edges'
                     }}
                   >
                     Your browser does not support the video tag.
