@@ -232,6 +232,18 @@ export default function App() {
     return false;
   };
 
+  // Helper function to detect mobile devices and problematic browsers
+  const isMobileDevice = () => {
+    const userAgent = navigator.userAgent;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent) || 
+                     window.innerWidth <= 768;
+    
+    // Also detect browsers known to have YouTube iframe issues
+    const hasVideoIssues = /iPhone|iPad|iPod|Android.*Chrome\/[0-9]{2}\.[0-9]|Safari.*Version\/[0-9]{2}\.[0-9]|Mobile.*Safari/i.test(userAgent);
+    
+    return isMobile || hasVideoIssues;
+  };
+
   // Helper function to get YouTube embed URL
   const getYouTubeEmbedUrl = (url) => {
     if (!url || typeof url !== 'string') return '';
@@ -240,8 +252,14 @@ export default function App() {
       const videoId = getYouTubeVideoId(url);
       
       if (videoId) {
-        // Use more stable embed parameters to avoid decoding issues
-        return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&rel=0&modestbranding=1&fs=1&cc_load_policy=0&iv_load_policy=3&start=0&end=0&enablejsapi=1&origin=${window.location.origin}`;
+        // Use different parameters for mobile vs desktop to avoid codec issues
+        if (isMobileDevice()) {
+          // Mobile-optimized parameters to prevent corruption
+          return `https://www.youtube.com/embed/${videoId}?autoplay=0&mute=1&rel=0&modestbranding=1&fs=1&cc_load_policy=0&iv_load_policy=3&enablejsapi=1&origin=${window.location.origin}&playsinline=1&controls=1`;
+        } else {
+          // Desktop parameters
+          return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&rel=0&modestbranding=1&fs=1&cc_load_policy=0&iv_load_policy=3&start=0&end=0&enablejsapi=1&origin=${window.location.origin}`;
+        }
       }
       return '';
     } catch (error) {
@@ -380,6 +398,14 @@ export default function App() {
       setModalType('video');
       setIsVideoPlaying(false); // Reset video playing state
       setIsLoading(true); // Reset loading state
+      
+      // Debug logging for mobile detection
+      console.log('Opening video modal:', {
+        url: url,
+        isMobile: isMobileDevice(),
+        userAgent: navigator.userAgent,
+        screenWidth: window.innerWidth
+      });
     } else {
       setImageModalSrc(url);
       setModalType('image');
@@ -555,23 +581,66 @@ export default function App() {
                       </div>
                     </div>
                   )}
-                  <iframe
-                    src={getYouTubeEmbedUrl(videoModalSrc)}
-                    className="w-full h-96 rounded-lg"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                    title="YouTube video"
-                    loading="eager"
-                    onLoad={(e) => {
-                      console.log('YouTube iframe loaded successfully');
-                      setIsLoading(false);
-                      // Clear timeout if iframe loads successfully
-                      if (iframeTimeout) {
-                        clearTimeout(iframeTimeout);
-                        setIframeTimeout(null);
-                      }
-                    }}
+                  
+                  {/* Mobile fallback - show direct link instead of iframe */}
+                  {isMobileDevice() ? (
+                    <div className="w-full h-96 bg-gray-900 rounded-lg flex items-center justify-center text-white">
+                      <div className="text-center p-6">
+                        <div className="text-6xl mb-4">📱</div>
+                        <h3 className="text-xl font-bold mb-2">Mobile Video Player</h3>
+                        <p className="text-sm opacity-75 mb-6">For the best viewing experience on mobile, we recommend opening the video directly in YouTube.</p>
+                        <div className="space-y-3">
+                          <button
+                            onClick={() => window.open(videoModalSrc, '_blank', 'noopener,noreferrer')}
+                            className="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                          >
+                            <span>▶️</span>
+                            Open in YouTube
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Try iframe as fallback
+                              const iframeContainer = document.querySelector('.mobile-iframe-container');
+                              if (iframeContainer) {
+                                iframeContainer.innerHTML = `
+                                  <iframe
+                                    src="${getYouTubeEmbedUrl(videoModalSrc)}"
+                                    className="w-full h-96 rounded-lg"
+                                    frameBorder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowFullScreen
+                                    title="YouTube video"
+                                    loading="eager"
+                                  ></iframe>
+                                `;
+                              }
+                            }}
+                            className="w-full bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+                          >
+                            Try Embedded Player
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="video-container">
+                      <iframe
+                        src={getYouTubeEmbedUrl(videoModalSrc)}
+                        className="w-full h-96 rounded-lg"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                        title="YouTube video"
+                        loading="eager"
+                      onLoad={(e) => {
+                        console.log('YouTube iframe loaded successfully');
+                        setIsLoading(false);
+                        // Clear timeout if iframe loads successfully
+                        if (iframeTimeout) {
+                          clearTimeout(iframeTimeout);
+                          setIframeTimeout(null);
+                        }
+                      }}
                   onError={(e) => {
                     console.log('YouTube iframe failed to load, showing fallback options');
                     // Clear timeout
@@ -599,7 +668,12 @@ export default function App() {
                       </div>
                     `;
                   }}
-                  />
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Hidden container for mobile iframe fallback */}
+                  <div className="mobile-iframe-container hidden"></div>
                 </div>
               ) : isVimeo ? (
                 <iframe
