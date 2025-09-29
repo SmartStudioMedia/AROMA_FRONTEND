@@ -189,6 +189,37 @@ function translateCategory(categoryName, lang = 'en') {
 }
 
 export default function App() {
+  // Add custom scrollbar styles
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .cart-scroll {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      .cart-scroll::-webkit-scrollbar {
+        display: none;
+      }
+      /* Mobile touch scrolling improvements */
+      .cart-scroll {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   // State
   const [language, setLanguage] = useState('en');
   const [showWelcome, setShowWelcome] = useState(true);
@@ -1120,31 +1151,31 @@ export default function App() {
 
       {/* Category Tabs */}
       {categories.length > 0 && (
-        <div className="bg-white border-b">
-          <div className="px-4 py-3">
+      <div className="bg-white border-b">
+        <div className="px-4 py-3">
             <div className="flex gap-2 overflow-x-auto scrollbar-hide category-scroll">
             {categories.map(category => {
               const categoryName = translateCategory(category.name, language);
               const categoryNameLower = categoryName.toLowerCase();
               
               return (
-                <button
+              <button
                   key={category.id}
                   onClick={() => setActiveCategory(categoryNameLower)}
                   className={`flex-shrink-0 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
                     activeCategory === categoryNameLower
                       ? 'bg-orange-500 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
                   <span className="mr-2">{category.icon}</span>
                   {categoryName}
-                </button>
+              </button>
               );
             })}
-            </div>
           </div>
         </div>
+      </div>
       )}
 
       {/* Menu Items */}
@@ -1182,7 +1213,7 @@ export default function App() {
                     {(getPrimaryMediaUrl(item).includes('youtube.com') || getPrimaryMediaUrl(item).includes('youtu.be')) ? (
                       <img
                         src={`https://img.youtube.com/vi/${getYouTubeVideoId(getPrimaryMediaUrl(item))}/maxresdefault.jpg`}
-                        alt={getText(item.name, language)}
+                alt={getText(item.name, language)}
                         className="w-full h-full object-cover rounded-lg"
                         loading="lazy"
                         onError={(e) => {
@@ -1405,9 +1436,10 @@ export default function App() {
 
       {/* Cart Modal */}
       {showCart && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6 border-b">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[95vh] sm:max-h-[90vh] flex flex-col">
+            {/* Fixed Header */}
+            <div className="p-6 border-b flex-shrink-0">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-gray-800">{t.cart}</h2>
                 <button
@@ -1419,115 +1451,123 @@ export default function App() {
               </div>
             </div>
             
-            <div className="p-6">
-              {cart.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <ShoppingCart className="text-gray-400" size={24} />
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto cart-scroll">
+              <div className="p-6">
+                {cart.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                      <ShoppingCart className="text-gray-400" size={24} />
+                    </div>
+                    <p className="text-gray-500">{t.emptyCart}</p>
                   </div>
-                  <p className="text-gray-500">{t.emptyCart}</p>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-4 mb-6">
-                    {cart.map(item => (
-                      <div key={item.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
-                        <div className="flex items-center gap-3 flex-1">
-                          {/* Item Thumbnail */}
-                          {getMediaType(item) === 'video' ? (
-                            <div className="relative w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0">
-                              {(getPrimaryMediaUrl(item).includes('youtube.com') || getPrimaryMediaUrl(item).includes('youtu.be')) ? (
-                                <img
-                                  src={`https://img.youtube.com/vi/${getYouTubeVideoId(getPrimaryMediaUrl(item))}/hqdefault.jpg`}
-                                  alt={getText(item.name, language)}
-                                  className="w-full h-full object-cover rounded-lg"
-                                  loading="lazy"
-                                  onError={(e) => {
-                                    console.log('YouTube thumbnail failed to load in cart, trying fallback');
-                                    // Try medium quality as fallback
-                                    e.target.src = `https://img.youtube.com/vi/${getYouTubeVideoId(getPrimaryMediaUrl(item))}/mqdefault.jpg`;
-                                    e.target.onerror = () => {
-                                      e.target.style.display = 'none';
-                                      e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gray-300 rounded-lg flex items-center justify-center"><span class="text-sm">🎥</span></div>';
-                                    };
-                                  }}
-                                  onLoad={() => console.log('YouTube thumbnail loaded successfully in cart')}
-                                />
-                              ) : getPrimaryMediaUrl(item).includes('vimeo.com') ? (
-                                <div className="w-full h-full bg-gray-300 rounded-lg flex items-center justify-center">
-                                  <span className="text-sm">🎥</span>
+                ) : (
+                  <>
+                    <div className="space-y-4 mb-6">
+                      {cart.map(item => (
+                        <div key={item.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                          <div className="flex items-center gap-3 flex-1">
+                            {/* Item Thumbnail */}
+                            {getMediaType(item) === 'video' ? (
+                              <div className="relative w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0">
+                                {(getPrimaryMediaUrl(item).includes('youtube.com') || getPrimaryMediaUrl(item).includes('youtu.be')) ? (
+                                  <img
+                                    src={`https://img.youtube.com/vi/${getYouTubeVideoId(getPrimaryMediaUrl(item))}/hqdefault.jpg`}
+                                    alt={getText(item.name, language)}
+                                    className="w-full h-full object-cover rounded-lg"
+                                    loading="lazy"
+                                    onError={(e) => {
+                                      console.log('YouTube thumbnail failed to load in cart, trying fallback');
+                                      // Try medium quality as fallback
+                                      e.target.src = `https://img.youtube.com/vi/${getYouTubeVideoId(getPrimaryMediaUrl(item))}/mqdefault.jpg`;
+                                      e.target.onerror = () => {
+                                        e.target.style.display = 'none';
+                                        e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gray-300 rounded-lg flex items-center justify-center"><span class="text-sm">🎥</span></div>';
+                                      };
+                                    }}
+                                    onLoad={() => console.log('YouTube thumbnail loaded successfully in cart')}
+                                  />
+                                ) : getPrimaryMediaUrl(item).includes('vimeo.com') ? (
+                                  <div className="w-full h-full bg-gray-300 rounded-lg flex items-center justify-center">
+                                    <span className="text-sm">🎥</span>
+                                  </div>
+                                ) : (
+                                  <video
+                                    src={getPrimaryMediaUrl(item)}
+                                    className="w-full h-full object-cover rounded-lg"
+                                    muted
+                                    loop
+                                  />
+                                )}
+                                <div className="absolute inset-0 bg-black bg-opacity-20 rounded-lg flex items-center justify-center">
+                                  <span className="text-xs">▶️</span>
                                 </div>
-                              ) : (
-                                <video
-                                  src={getPrimaryMediaUrl(item)}
-                                  className="w-full h-full object-cover rounded-lg"
-                                  muted
-                                  loop
-                                />
-                              )}
-                              <div className="absolute inset-0 bg-black bg-opacity-20 rounded-lg flex items-center justify-center">
-                                <span className="text-xs">▶️</span>
                               </div>
+                            ) : (
+                              <img
+                                src={getPrimaryMediaUrl(item)}
+                                alt={getText(item.name, language)}
+                                className="w-12 h-12 object-cover rounded-lg flex-shrink-0"
+                              />
+                            )}
+                            <div className="flex-1">
+                              <h3 className="font-medium text-gray-800">{getText(item.name, language)}</h3>
+                              <p className="text-gray-600 text-sm">
+                                €{item.price.toFixed(2)} × {item.qty}
+                              </p>
                             </div>
-                          ) : (
-                            <img
-                              src={getPrimaryMediaUrl(item)}
-                            alt={getText(item.name, language)}
-                            className="w-12 h-12 object-cover rounded-lg flex-shrink-0"
-                          />
-                          )}
-                          <div className="flex-1">
-                            <h3 className="font-medium text-gray-800">{getText(item.name, language)}</h3>
-                            <p className="text-gray-600 text-sm">
-                              €{item.price.toFixed(2)} × {item.qty}
-                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => removeFromCart(item.id)}
+                              className="bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full transition-colors"
+                            >
+                              <Minus size={12} />
+                            </button>
+                            <button
+                              onClick={() => addToCart(item)}
+                              className="bg-orange-500 hover:bg-orange-600 text-white p-1.5 rounded-full transition-colors"
+                            >
+                              <Plus size={12} />
+                            </button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => removeFromCart(item.id)}
-                            className="bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full transition-colors"
-                          >
-                            <Minus size={12} />
-                          </button>
-                          <button
-                            onClick={() => addToCart(item)}
-                            className="bg-orange-500 hover:bg-orange-600 text-white p-1.5 rounded-full transition-colors"
-                          >
-                            <Plus size={12} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <div className="border-t pt-6">
-                    <div className="flex justify-between items-center mb-6">
-                      <span className="font-bold text-lg text-gray-800">{t.total}</span>
-                      <span className="font-bold text-xl text-orange-600">
-                        €{getCartTotal().toFixed(2)}
-                      </span>
+                      ))}
                     </div>
                     
-                    <div className="space-y-3">
-                      <button
-                        onClick={clearCart}
-                        className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-medium transition-colors"
-                      >
-                        {t.cancelOrder}
-                      </button>
-                      <button
-                        onClick={submitOrder}
-                        disabled={loading}
-                        className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
-                      >
-                        {loading ? "Processing..." : t.completeOrder}
-                      </button>
+                    <div className="border-t pt-6">
+                      <div className="flex justify-between items-center mb-6">
+                        <span className="font-bold text-lg text-gray-800">{t.total}</span>
+                        <span className="font-bold text-xl text-orange-600">
+                          €{getCartTotal().toFixed(2)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </>
-              )}
+                  </>
+                )}
+              </div>
             </div>
+                    
+            {/* Fixed Footer with Complete Button */}
+            {cart.length > 0 && (
+              <div className="border-t bg-white p-6 flex-shrink-0">
+                <div className="space-y-3">
+                  <button
+                    onClick={clearCart}
+                    className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-medium transition-colors"
+                  >
+                    {t.cancelOrder}
+                  </button>
+                  <button
+                    onClick={submitOrder}
+                    disabled={loading}
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
+                  >
+                    {loading ? "Processing..." : t.completeOrder}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
