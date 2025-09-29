@@ -261,8 +261,8 @@ export default function App() {
     const forceMobileParam = urlParams.get('forceMobile');
     const finalMobile = forceMobile || forceMobileParam === 'true';
     
-    // AGGRESSIVE: Force mobile mode for ALL devices to prevent corruption
-    const aggressiveMobile = true;
+    // Only force mobile mode for actual mobile devices
+    const aggressiveMobile = false; // Allow desktop to use iframe
     
     console.log('Mobile detection:', {
       userAgent,
@@ -278,7 +278,7 @@ export default function App() {
       aggressiveMobile
     });
     
-    return aggressiveMobile; // Force mobile mode for ALL devices
+    return finalMobile; // Use normal mobile detection
   };
 
   // Helper function to get YouTube embed URL
@@ -386,7 +386,16 @@ export default function App() {
   console.log('Testing YouTube Shorts detection:', {
     url: testShortsUrl,
     isShort: isYouTubeShort(testShortsUrl),
-    embedUrl: getYouTubeEmbedUrl(testShortsUrl)
+    embedUrl: getYouTubeEmbedUrl(testShortsUrl),
+    willUseDirectLink: isYouTubeShort(testShortsUrl)
+  });
+  
+  // Test regular YouTube video
+  console.log('Testing regular YouTube video:', {
+    url: testYouTubeUrl,
+    isShort: isYouTubeShort(testYouTubeUrl),
+    embedUrl: getYouTubeEmbedUrl(testYouTubeUrl),
+    willUseDirectLink: isYouTubeShort(testYouTubeUrl)
   });
   
   console.log('Test thumbnail URL:', `https://img.youtube.com/vi/${testVideoId}/mqdefault.jpg`);
@@ -452,7 +461,8 @@ export default function App() {
         isYouTubeShort: isYouTubeShort(url),
         userAgent: navigator.userAgent,
         screenWidth: window.innerWidth,
-        willUseDirectLink: isMobileDevice() || isYouTubeShort(url)
+        willUseDirectLink: isYouTubeShort(url) || new URLSearchParams(window.location.search).get('forceDirect'),
+        reason: isYouTubeShort(url) ? 'YouTube Shorts detected' : 'Normal video'
       });
     } else {
       setImageModalSrc(url);
@@ -630,12 +640,10 @@ export default function App() {
                     </div>
                   )}
                   
-                  {/* FORCE DIRECT LINK FOR ALL DEVICES - NO IFRAME AT ALL */}
-                  {/* This completely prevents video corruption on ALL devices */}
-                  {/* Set to false to re-enable iframe for desktop testing */}
-                  {/* Toggle: true = direct link (no corruption), false = iframe (may corrupt) */}
-                  {/* Add ?useIframe=true to URL to test iframe mode */}
-                  {!new URLSearchParams(window.location.search).get('useIframe') ? (
+                  {/* FORCE DIRECT LINK FOR YOUTUBE SHORTS ONLY */}
+                  {/* Normal YouTube videos can use iframe, Shorts must use direct links */}
+                  {/* Add ?forceDirect=true to URL to force all videos to direct links */}
+                  {(isYouTubeShort(videoModalSrc) || new URLSearchParams(window.location.search).get('forceDirect')) ? (
                     <div className="w-full h-96 bg-gradient-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center text-white">
                       <div className="text-center p-6">
                         <div className="text-8xl mb-6">{isYouTubeShort(videoModalSrc) ? '🎬' : '📱'}</div>
@@ -644,17 +652,20 @@ export default function App() {
                         </h3>
                         <p className="text-base opacity-90 mb-8 leading-relaxed">
                           {isYouTubeShort(videoModalSrc) 
-                            ? 'YouTube Shorts work best when opened directly in the YouTube app to prevent video corruption and ensure proper playback.'
+                            ? 'YouTube Shorts have known corruption issues when embedded. Opening directly in the YouTube app prevents green lines and jagged patterns.'
                             : 'To prevent video corruption (green lines, jagged patterns), please open this video directly in the YouTube app for the best viewing experience.'
                           }
                         </p>
                         
                         <div className="mb-6 p-4 bg-red-800 bg-opacity-50 rounded-lg border border-red-400">
                           <p className="text-sm font-semibold text-red-200">
-                            🛡️ Corruption Prevention Active
+                            {isYouTubeShort(videoModalSrc) ? '🎬 Shorts Corruption Prevention' : '🛡️ Corruption Prevention Active'}
                           </p>
                           <p className="text-xs text-red-300 mt-1">
-                            This prevents diagonal green lines and jagged video patterns
+                            {isYouTubeShort(videoModalSrc) 
+                              ? 'YouTube Shorts embedded players show diagonal green lines and corruption'
+                              : 'This prevents diagonal green lines and jagged video patterns'
+                            }
                           </p>
                         </div>
                         <div className="space-y-4">
