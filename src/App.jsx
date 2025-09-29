@@ -540,6 +540,13 @@ export default function App() {
                     onPlay={() => setIsVideoPlaying(true)}
                     onPause={() => setIsVideoPlaying(false)}
                     onEnded={() => setIsVideoPlaying(false)}
+                    style={{
+                      WebkitPlaysInline: true,
+                      playsInline: true,
+                      webkit-playsinline: true,
+                      imageRendering: 'crisp-edges',
+                      imageRendering: '-webkit-optimize-contrast'
+                    }}
                   >
                     Your browser does not support the video tag.
                   </video>
@@ -721,13 +728,18 @@ export default function App() {
                        }}>
                     {(getPrimaryMediaUrl(item).includes('youtube.com') || getPrimaryMediaUrl(item).includes('youtu.be')) ? (
                       <img
-                        src={`https://img.youtube.com/vi/${getYouTubeVideoId(getPrimaryMediaUrl(item))}/mqdefault.jpg`}
+                        src={`https://img.youtube.com/vi/${getYouTubeVideoId(getPrimaryMediaUrl(item))}/maxresdefault.jpg`}
                         alt={getText(item.name, language)}
                         className="w-full h-full object-cover rounded-lg"
+                        loading="lazy"
                         onError={(e) => {
-                          console.log('YouTube thumbnail failed to load, showing fallback');
-                          e.target.style.display = 'none';
-                          e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gray-300 rounded-lg flex items-center justify-center"><span class="text-2xl">🎥</span></div>';
+                          console.log('YouTube thumbnail failed to load, trying fallback');
+                          // Try medium quality as fallback
+                          e.target.src = `https://img.youtube.com/vi/${getYouTubeVideoId(getPrimaryMediaUrl(item))}/hqdefault.jpg`;
+                          e.target.onerror = () => {
+                            e.target.style.display = 'none';
+                            e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gray-300 rounded-lg flex items-center justify-center"><span class="text-2xl">🎥</span></div>';
+                          };
                         }}
                         onLoad={() => console.log('YouTube thumbnail loaded successfully')}
                       />
@@ -825,10 +837,15 @@ export default function App() {
                       src={`https://img.youtube.com/vi/${getYouTubeVideoId(getPrimaryMediaUrl(selectedItem))}/maxresdefault.jpg`}
                       alt={getText(selectedItem.name, language)}
                       className="w-full h-full object-cover rounded-t-2xl"
+                      loading="eager"
                       onError={(e) => {
-                        console.log('YouTube thumbnail failed to load in selected item modal, showing fallback');
-                        e.target.style.display = 'none';
-                        e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gray-300 rounded-t-2xl flex items-center justify-center"><span class="text-6xl">🎥</span></div>';
+                        console.log('YouTube thumbnail failed to load in selected item modal, trying fallback');
+                        // Try high quality as fallback
+                        e.target.src = `https://img.youtube.com/vi/${getYouTubeVideoId(getPrimaryMediaUrl(selectedItem))}/hqdefault.jpg`;
+                        e.target.onerror = () => {
+                          e.target.style.display = 'none';
+                          e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gray-300 rounded-t-2xl flex items-center justify-center"><span class="text-6xl">🎥</span></div>';
+                        };
                       }}
                       onLoad={() => console.log('YouTube thumbnail loaded successfully in selected item modal')}
                     />
@@ -968,13 +985,18 @@ export default function App() {
                             <div className="relative w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0">
                               {(getPrimaryMediaUrl(item).includes('youtube.com') || getPrimaryMediaUrl(item).includes('youtu.be')) ? (
                                 <img
-                                  src={`https://img.youtube.com/vi/${getYouTubeVideoId(getPrimaryMediaUrl(item))}/default.jpg`}
+                                  src={`https://img.youtube.com/vi/${getYouTubeVideoId(getPrimaryMediaUrl(item))}/hqdefault.jpg`}
                                   alt={getText(item.name, language)}
                                   className="w-full h-full object-cover rounded-lg"
+                                  loading="lazy"
                                   onError={(e) => {
-                                    console.log('YouTube thumbnail failed to load in cart, showing fallback');
-                                    e.target.style.display = 'none';
-                                    e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gray-300 rounded-lg flex items-center justify-center"><span class="text-sm">🎥</span></div>';
+                                    console.log('YouTube thumbnail failed to load in cart, trying fallback');
+                                    // Try medium quality as fallback
+                                    e.target.src = `https://img.youtube.com/vi/${getYouTubeVideoId(getPrimaryMediaUrl(item))}/mqdefault.jpg`;
+                                    e.target.onerror = () => {
+                                      e.target.style.display = 'none';
+                                      e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gray-300 rounded-lg flex items-center justify-center"><span class="text-sm">🎥</span></div>';
+                                    };
                                   }}
                                   onLoad={() => console.log('YouTube thumbnail loaded successfully in cart')}
                                 />
