@@ -261,6 +261,9 @@ export default function App() {
     const forceMobileParam = urlParams.get('forceMobile');
     const finalMobile = forceMobile || forceMobileParam === 'true';
     
+    // AGGRESSIVE: Force mobile mode for ALL devices to prevent corruption
+    const aggressiveMobile = true;
+    
     console.log('Mobile detection:', {
       userAgent,
       isMobile,
@@ -271,10 +274,11 @@ export default function App() {
       screenHeight: window.innerHeight,
       forceMobile,
       forceMobileParam,
-      finalMobile
+      finalMobile,
+      aggressiveMobile
     });
     
-    return finalMobile;
+    return aggressiveMobile; // Force mobile mode for ALL devices
   };
 
   // Helper function to get YouTube embed URL
@@ -626,9 +630,12 @@ export default function App() {
                     </div>
                   )}
                   
-                  {/* Force mobile users to use direct link - no iframe at all */}
-                  {/* Also force direct link for YouTube Shorts on any device */}
-                  {(isMobileDevice() || isYouTubeShort(videoModalSrc)) ? (
+                  {/* FORCE DIRECT LINK FOR ALL DEVICES - NO IFRAME AT ALL */}
+                  {/* This completely prevents video corruption on ALL devices */}
+                  {/* Set to false to re-enable iframe for desktop testing */}
+                  {/* Toggle: true = direct link (no corruption), false = iframe (may corrupt) */}
+                  {/* Add ?useIframe=true to URL to test iframe mode */}
+                  {!new URLSearchParams(window.location.search).get('useIframe') ? (
                     <div className="w-full h-96 bg-gradient-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center text-white">
                       <div className="text-center p-6">
                         <div className="text-8xl mb-6">{isYouTubeShort(videoModalSrc) ? '🎬' : '📱'}</div>
@@ -638,9 +645,18 @@ export default function App() {
                         <p className="text-base opacity-90 mb-8 leading-relaxed">
                           {isYouTubeShort(videoModalSrc) 
                             ? 'YouTube Shorts work best when opened directly in the YouTube app to prevent video corruption and ensure proper playback.'
-                            : 'To prevent video corruption on mobile devices, please open this video directly in the YouTube app for the best viewing experience.'
+                            : 'To prevent video corruption (green lines, jagged patterns), please open this video directly in the YouTube app for the best viewing experience.'
                           }
                         </p>
+                        
+                        <div className="mb-6 p-4 bg-red-800 bg-opacity-50 rounded-lg border border-red-400">
+                          <p className="text-sm font-semibold text-red-200">
+                            🛡️ Corruption Prevention Active
+                          </p>
+                          <p className="text-xs text-red-300 mt-1">
+                            This prevents diagonal green lines and jagged video patterns
+                          </p>
+                        </div>
                         <div className="space-y-4">
                           <button
                             onClick={() => {
