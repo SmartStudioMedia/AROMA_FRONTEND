@@ -236,18 +236,7 @@ export default function App() {
     if (!url || typeof url !== 'string') return '';
     
     try {
-      let videoId = '';
-      if (url.includes('youtube.com/watch?v=')) {
-        const parts = url.split('v=');
-        if (parts.length > 1) {
-          videoId = parts[1].split('&')[0];
-        }
-      } else if (url.includes('youtu.be/')) {
-        const parts = url.split('youtu.be/');
-        if (parts.length > 1) {
-          videoId = parts[1].split('?')[0];
-        }
-      }
+      const videoId = getYouTubeVideoId(url);
       
       if (videoId) {
         return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}`;
@@ -286,6 +275,7 @@ export default function App() {
     try {
       console.log('getYouTubeVideoId: Processing URL:', url);
       
+      // Handle regular YouTube URLs: https://www.youtube.com/watch?v=VIDEO_ID
       if (url.includes('youtube.com/watch?v=')) {
         const parts = url.split('v=');
         if (parts.length > 1) {
@@ -293,7 +283,18 @@ export default function App() {
           console.log('getYouTubeVideoId: Extracted video ID from youtube.com:', videoId);
           return videoId;
         }
-      } else if (url.includes('youtu.be/')) {
+      }
+      // Handle YouTube Shorts URLs: https://www.youtube.com/shorts/VIDEO_ID
+      else if (url.includes('youtube.com/shorts/')) {
+        const parts = url.split('youtube.com/shorts/');
+        if (parts.length > 1) {
+          const videoId = parts[1].split('?')[0];
+          console.log('getYouTubeVideoId: Extracted video ID from youtube.com/shorts:', videoId);
+          return videoId;
+        }
+      }
+      // Handle youtu.be URLs: https://youtu.be/VIDEO_ID
+      else if (url.includes('youtu.be/')) {
         const parts = url.split('youtu.be/');
         if (parts.length > 1) {
           const videoId = parts[1].split('?')[0];
@@ -312,9 +313,16 @@ export default function App() {
 
   // Test the YouTube URL parsing
   const testYouTubeUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+  const testShortsUrl = 'https://www.youtube.com/shorts/dQw4w9WgXcQ';
+  
   console.log('Testing YouTube URL parsing:', testYouTubeUrl);
   const testVideoId = getYouTubeVideoId(testYouTubeUrl);
   console.log('Test result - Video ID:', testVideoId);
+  
+  console.log('Testing YouTube Shorts URL parsing:', testShortsUrl);
+  const testShortsId = getYouTubeVideoId(testShortsUrl);
+  console.log('Test result - Shorts ID:', testShortsId);
+  
   console.log('Test thumbnail URL:', `https://img.youtube.com/vi/${testVideoId}/mqdefault.jpg`);
   
   // Test if the thumbnail URL actually works
