@@ -110,7 +110,82 @@ function translateCategory(categoryName, lang = 'en') {
   if (categoryTranslations[categoryName]) {
     return categoryTranslations[categoryName][lang] || categoryTranslations[categoryName].en;
   }
-  return categoryName; // Return original if no translation found
+  
+  // For new categories, try to translate common food terms
+  const commonTerms = {
+    'Pizza': { en: 'Pizza', es: 'Pizza', it: 'Pizza', fr: 'Pizza', de: 'Pizza', ru: 'Пицца', pt: 'Pizza', nl: 'Pizza', pl: 'Pizza' },
+    'Pasta': { en: 'Pasta', es: 'Pasta', it: 'Pasta', fr: 'Pâtes', de: 'Pasta', ru: 'Паста', pt: 'Massa', nl: 'Pasta', pl: 'Makaron' },
+    'Salad': { en: 'Salad', es: 'Ensalada', it: 'Insalata', fr: 'Salade', de: 'Salat', ru: 'Салат', pt: 'Salada', nl: 'Salade', pl: 'Sałatka' },
+    'Soup': { en: 'Soup', es: 'Sopa', it: 'Zuppa', fr: 'Soupe', de: 'Suppe', ru: 'Суп', pt: 'Sopa', nl: 'Soep', pl: 'Zupa' },
+    'Appetizer': { en: 'Appetizer', es: 'Aperitivo', it: 'Antipasto', fr: 'Entrée', de: 'Vorspeise', ru: 'Закуска', pt: 'Aperitivo', nl: 'Voorgerecht', pl: 'Przystawka' },
+    'Main Course': { en: 'Main Course', es: 'Plato Principal', it: 'Piatto Principale', fr: 'Plat Principal', de: 'Hauptgericht', ru: 'Основное блюдо', pt: 'Prato Principal', nl: 'Hoofdgerecht', pl: 'Danie Główne' },
+    'Breakfast': { en: 'Breakfast', es: 'Desayuno', it: 'Colazione', fr: 'Petit-déjeuner', de: 'Frühstück', ru: 'Завтрак', pt: 'Café da Manhã', nl: 'Ontbijt', pl: 'Śniadanie' },
+    'Lunch': { en: 'Lunch', es: 'Almuerzo', it: 'Pranzo', fr: 'Déjeuner', de: 'Mittagessen', ru: 'Обед', pt: 'Almoço', nl: 'Lunch', pl: 'Obiad' },
+    'Dinner': { en: 'Dinner', es: 'Cena', it: 'Cena', fr: 'Dîner', de: 'Abendessen', ru: 'Ужин', pt: 'Jantar', nl: 'Diner', pl: 'Kolacja' },
+    'Snacks': { en: 'Snacks', es: 'Aperitivos', it: 'Spuntini', fr: 'Collations', de: 'Snacks', ru: 'Закуски', pt: 'Lanches', nl: 'Snacks', pl: 'Przekąski' },
+    'Beverages': { en: 'Beverages', es: 'Bebidas', it: 'Bevande', fr: 'Boissons', de: 'Getränke', ru: 'Напитки', pt: 'Bebidas', nl: 'Drankjes', pl: 'Napoje' },
+    'Dessert': { en: 'Dessert', es: 'Postre', it: 'Dolce', fr: 'Dessert', de: 'Dessert', ru: 'Десерт', pt: 'Sobremesa', nl: 'Dessert', pl: 'Deser' },
+    'Vegetarian': { en: 'Vegetarian', es: 'Vegetariano', it: 'Vegetariano', fr: 'Végétarien', de: 'Vegetarisch', ru: 'Вегетарианский', pt: 'Vegetariano', nl: 'Vegetarisch', pl: 'Wegetariański' },
+    'Vegan': { en: 'Vegan', es: 'Vegano', it: 'Vegano', fr: 'Végan', de: 'Vegan', ru: 'Веганский', pt: 'Vegano', nl: 'Veganistisch', pl: 'Wegański' },
+    'Gluten Free': { en: 'Gluten Free', es: 'Sin Gluten', it: 'Senza Glutine', fr: 'Sans Gluten', de: 'Glutenfrei', ru: 'Без глютена', pt: 'Sem Glúten', nl: 'Glutenvrij', pl: 'Bezglutenowy' },
+    'Healthy': { en: 'Healthy', es: 'Saludable', it: 'Sano', fr: 'Sain', de: 'Gesund', ru: 'Здоровый', pt: 'Saudável', nl: 'Gezond', pl: 'Zdrowy' },
+    'Spicy': { en: 'Spicy', es: 'Picante', it: 'Piccante', fr: 'Épicé', de: 'Scharf', ru: 'Острый', pt: 'Picante', nl: 'Pittig', pl: 'Ostry' },
+    'Seafood': { en: 'Seafood', es: 'Mariscos', it: 'Frutti di Mare', fr: 'Fruits de Mer', de: 'Meeresfrüchte', ru: 'Морепродукты', pt: 'Frutos do Mar', nl: 'Zeevruchten', pl: 'Owoce Morza' },
+    'Meat': { en: 'Meat', es: 'Carne', it: 'Carne', fr: 'Viande', de: 'Fleisch', ru: 'Мясо', pt: 'Carne', nl: 'Vlees', pl: 'Mięso' },
+    'Chicken': { en: 'Chicken', es: 'Pollo', it: 'Pollo', fr: 'Poulet', de: 'Hähnchen', ru: 'Курица', pt: 'Frango', nl: 'Kip', pl: 'Kurczak' },
+    'Beef': { en: 'Beef', es: 'Carne de Res', it: 'Manzo', fr: 'Bœuf', de: 'Rindfleisch', ru: 'Говядина', pt: 'Carne de Vaca', nl: 'Rundvlees', pl: 'Wołowina' },
+    'Pork': { en: 'Pork', es: 'Cerdo', it: 'Maiale', fr: 'Porc', de: 'Schweinefleisch', ru: 'Свинина', pt: 'Porco', nl: 'Varkensvlees', pl: 'Wieprzowina' },
+    'Fish': { en: 'Fish', es: 'Pescado', it: 'Pesce', fr: 'Poisson', de: 'Fisch', ru: 'Рыба', pt: 'Peixe', nl: 'Vis', pl: 'Ryba' },
+    'Vegetables': { en: 'Vegetables', es: 'Verduras', it: 'Verdure', fr: 'Légumes', de: 'Gemüse', ru: 'Овощи', pt: 'Legumes', nl: 'Groenten', pl: 'Warzywa' },
+    'Fruits': { en: 'Fruits', es: 'Frutas', it: 'Frutta', fr: 'Fruits', de: 'Obst', ru: 'Фрукты', pt: 'Frutas', nl: 'Fruit', pl: 'Owoce' },
+    'Bread': { en: 'Bread', es: 'Pan', it: 'Pane', fr: 'Pain', de: 'Brot', ru: 'Хлеб', pt: 'Pão', nl: 'Brood', pl: 'Chleb' },
+    'Rice': { en: 'Rice', es: 'Arroz', it: 'Riso', fr: 'Riz', de: 'Reis', ru: 'Рис', pt: 'Arroz', nl: 'Rijst', pl: 'Ryż' },
+    'Noodles': { en: 'Noodles', es: 'Fideos', it: 'Tagliatelle', fr: 'Nouilles', de: 'Nudeln', ru: 'Лапша', pt: 'Macarrão', nl: 'Noedels', pl: 'Makaron' },
+    'Sandwich': { en: 'Sandwich', es: 'Sándwich', it: 'Panino', fr: 'Sandwich', de: 'Sandwich', ru: 'Сэндвич', pt: 'Sanduíche', nl: 'Sandwich', pl: 'Kanapka' },
+    'Wrap': { en: 'Wrap', es: 'Wrap', it: 'Wrap', fr: 'Wrap', de: 'Wrap', ru: 'Ролл', pt: 'Wrap', nl: 'Wrap', pl: 'Wrap' },
+    'Burrito': { en: 'Burrito', es: 'Burrito', it: 'Burrito', fr: 'Burrito', de: 'Burrito', ru: 'Буррито', pt: 'Burrito', nl: 'Burrito', pl: 'Burrito' },
+    'Taco': { en: 'Taco', es: 'Taco', it: 'Taco', fr: 'Taco', de: 'Taco', ru: 'Тако', pt: 'Taco', nl: 'Taco', pl: 'Taco' },
+    'Sushi': { en: 'Sushi', es: 'Sushi', it: 'Sushi', fr: 'Sushi', de: 'Sushi', ru: 'Суши', pt: 'Sushi', nl: 'Sushi', pl: 'Sushi' },
+    'Asian': { en: 'Asian', es: 'Asiático', it: 'Asiatico', fr: 'Asiatique', de: 'Asiatisch', ru: 'Азиатский', pt: 'Asiático', nl: 'Aziatisch', pl: 'Azjatycki' },
+    'Italian': { en: 'Italian', es: 'Italiano', it: 'Italiano', fr: 'Italien', de: 'Italienisch', ru: 'Итальянский', pt: 'Italiano', nl: 'Italiaans', pl: 'Włoski' },
+    'Mexican': { en: 'Mexican', es: 'Mexicano', it: 'Messicano', fr: 'Mexicain', de: 'Mexikanisch', ru: 'Мексиканский', pt: 'Mexicano', nl: 'Mexicaans', pl: 'Meksykański' },
+    'Chinese': { en: 'Chinese', es: 'Chino', it: 'Cinese', fr: 'Chinois', de: 'Chinesisch', ru: 'Китайский', pt: 'Chinês', nl: 'Chinees', pl: 'Chiński' },
+    'Japanese': { en: 'Japanese', es: 'Japonés', it: 'Giapponese', fr: 'Japonais', de: 'Japanisch', ru: 'Японский', pt: 'Japonês', nl: 'Japans', pl: 'Japoński' },
+    'Indian': { en: 'Indian', es: 'Indio', it: 'Indiano', fr: 'Indien', de: 'Indisch', ru: 'Индийский', pt: 'Indiano', nl: 'Indiaas', pl: 'Indyjski' },
+    'Thai': { en: 'Thai', es: 'Tailandés', it: 'Tailandese', fr: 'Thaï', de: 'Thailändisch', ru: 'Тайский', pt: 'Tailandês', nl: 'Thais', pl: 'Tajski' },
+    'Mediterranean': { en: 'Mediterranean', es: 'Mediterráneo', it: 'Mediterraneo', fr: 'Méditerranéen', de: 'Mittelmeer', ru: 'Средиземноморский', pt: 'Mediterrâneo', nl: 'Mediterraan', pl: 'Śródziemnomorski' },
+    'American': { en: 'American', es: 'Americano', it: 'Americano', fr: 'Américain', de: 'Amerikanisch', ru: 'Американский', pt: 'Americano', nl: 'Amerikaans', pl: 'Amerykański' },
+    'French': { en: 'French', es: 'Francés', it: 'Francese', fr: 'Français', de: 'Französisch', ru: 'Французский', pt: 'Francês', nl: 'Frans', pl: 'Francuski' },
+    'Greek': { en: 'Greek', es: 'Griego', it: 'Greco', fr: 'Grec', de: 'Griechisch', ru: 'Греческий', pt: 'Grego', nl: 'Grieks', pl: 'Grecki' },
+    'Turkish': { en: 'Turkish', es: 'Turco', it: 'Turco', fr: 'Turc', de: 'Türkisch', ru: 'Турецкий', pt: 'Turco', nl: 'Turks', pl: 'Turecki' },
+    'Lebanese': { en: 'Lebanese', es: 'Libanés', it: 'Libanese', fr: 'Libanais', de: 'Libanesisch', ru: 'Ливанский', pt: 'Libanês', nl: 'Libanees', pl: 'Libański' },
+    'Fast Food': { en: 'Fast Food', es: 'Comida Rápida', it: 'Fast Food', fr: 'Restauration Rapide', de: 'Fast Food', ru: 'Фастфуд', pt: 'Fast Food', nl: 'Fast Food', pl: 'Fast Food' },
+    'Street Food': { en: 'Street Food', es: 'Comida Callejera', it: 'Cibo di Strada', fr: 'Nourriture de Rue', de: 'Straßenessen', ru: 'Уличная еда', pt: 'Comida de Rua', nl: 'Straatvoedsel', pl: 'Jedzenie Uliczne' },
+    'Fine Dining': { en: 'Fine Dining', es: 'Alta Cocina', it: 'Alta Cucina', fr: 'Haute Cuisine', de: 'Feinschmecker', ru: 'Высокая кухня', pt: 'Alta Gastronomia', nl: 'Fijne Keuken', pl: 'Wysoka Kuchnia' },
+    'Casual': { en: 'Casual', es: 'Casual', it: 'Casual', fr: 'Décontracté', de: 'Lässig', ru: 'Повседневный', pt: 'Casual', nl: 'Casual', pl: 'Swobodny' },
+    'Family': { en: 'Family', es: 'Familiar', it: 'Familiare', fr: 'Familial', de: 'Familie', ru: 'Семейный', pt: 'Familiar', nl: 'Familie', pl: 'Rodzinny' },
+    'Kids': { en: 'Kids', es: 'Niños', it: 'Bambini', fr: 'Enfants', de: 'Kinder', ru: 'Детский', pt: 'Crianças', nl: 'Kinderen', pl: 'Dziecięcy' },
+    'Senior': { en: 'Senior', es: 'Mayores', it: 'Anziani', fr: 'Séniors', de: 'Senioren', ru: 'Пожилой', pt: 'Idosos', nl: 'Senioren', pl: 'Senior' },
+    'Special': { en: 'Special', es: 'Especial', it: 'Speciale', fr: 'Spécial', de: 'Spezial', ru: 'Особый', pt: 'Especial', nl: 'Speciaal', pl: 'Specjalny' },
+    'Limited': { en: 'Limited', es: 'Limitado', it: 'Limitato', fr: 'Limité', de: 'Begrenzt', ru: 'Ограниченный', pt: 'Limitado', nl: 'Beperkt', pl: 'Ograniczony' },
+    'Seasonal': { en: 'Seasonal', es: 'Estacional', it: 'Stagionale', fr: 'Saisonnier', de: 'Saisonal', ru: 'Сезонный', pt: 'Sazonal', nl: 'Seizoensgebonden', pl: 'Sezonowy' },
+    'Holiday': { en: 'Holiday', es: 'Navideño', it: 'Festivo', fr: 'Vacances', de: 'Feiertag', ru: 'Праздничный', pt: 'Feriado', nl: 'Vakantie', pl: 'Świąteczny' },
+    'Summer': { en: 'Summer', es: 'Verano', it: 'Estate', fr: 'Été', de: 'Sommer', ru: 'Летний', pt: 'Verão', nl: 'Zomer', pl: 'Letni' },
+    'Winter': { en: 'Winter', es: 'Invierno', it: 'Inverno', fr: 'Hiver', de: 'Winter', ru: 'Зимний', pt: 'Inverno', nl: 'Winter', pl: 'Zimowy' },
+    'Spring': { en: 'Spring', es: 'Primavera', it: 'Primavera', fr: 'Printemps', de: 'Frühling', ru: 'Весенний', pt: 'Primavera', nl: 'Lente', pl: 'Wiosenny' },
+    'Autumn': { en: 'Autumn', es: 'Otoño', it: 'Autunno', fr: 'Automne', de: 'Herbst', ru: 'Осенний', pt: 'Outono', nl: 'Herfst', pl: 'Jesienny' }
+  };
+  
+  // Check if the category name matches any common terms
+  const normalizedName = categoryName.toLowerCase().trim();
+  for (const [key, translations] of Object.entries(commonTerms)) {
+    if (normalizedName === key.toLowerCase()) {
+      return translations[lang] || translations.en;
+    }
+  }
+  
+  // If no translation found, return the original name
+  return categoryName;
 }
 
 export default function App() {
