@@ -58,7 +58,7 @@ export default function App() {
   const [language, setLanguage] = useState('en');
   const [showWelcome, setShowWelcome] = useState(true);
   const [orderType, setOrderType] = useState(null);
-  const [activeCategory, setActiveCategory] = useState('burgers');
+  const [activeCategory, setActiveCategory] = useState('');
   const [cart, setCart] = useState([]);
   const [showCart, setShowCart] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -141,20 +141,27 @@ export default function App() {
     if (categories.length > 0) {
       const firstCategory = categories[0];
       const categoryName = typeof firstCategory.name === 'string' ? firstCategory.name : firstCategory.name[language] || firstCategory.name.en;
-      setActiveCategory(categoryName.toLowerCase());
+      if (categoryName && typeof categoryName === 'string') {
+        setActiveCategory(categoryName.toLowerCase());
+      }
     }
   }, [language, categories]);
 
   // Get items for current category
   const getCurrentCategoryItems = () => {
-    if (!items || !activeCategory) {
+    if (!items || !activeCategory || !categories.length) {
       return [];
     }
     
     const categoryId = categories.find(cat => {
       const categoryName = typeof cat.name === 'string' ? cat.name : cat.name[language] || cat.name.en;
-      return categoryName.toLowerCase() === activeCategory;
+      return categoryName && typeof categoryName === 'string' && categoryName.toLowerCase() === activeCategory;
     })?.id;
+    
+    if (!categoryId) {
+      return [];
+    }
+    
     const filteredItems = items.filter(item => item.category_id === categoryId && item.active);
     
     return filteredItems;
@@ -970,36 +977,44 @@ export default function App() {
       )}
 
       {/* Category Tabs */}
-      <div className="bg-white border-b">
-        <div className="px-4 py-3">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide category-scroll">
-            {categories.map(category => {
-              const categoryName = typeof category.name === 'string' ? category.name : category.name[language] || category.name.en;
-              const categoryNameLower = categoryName.toLowerCase();
-              
-              return (
-                <button
-                  key={category.id}
-                  onClick={() => setActiveCategory(categoryNameLower)}
-                  className={`flex-shrink-0 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
-                    activeCategory === categoryNameLower
-                      ? 'bg-orange-500 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  <span className="mr-2">{category.icon}</span>
-                  {categoryName}
-                </button>
-              );
-            })}
+      {categories.length > 0 && (
+        <div className="bg-white border-b">
+          <div className="px-4 py-3">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide category-scroll">
+              {categories.map(category => {
+                const categoryName = typeof category.name === 'string' ? category.name : category.name[language] || category.name.en;
+                const categoryNameLower = categoryName && typeof categoryName === 'string' ? categoryName.toLowerCase() : '';
+                
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => setActiveCategory(categoryNameLower)}
+                    className={`flex-shrink-0 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                      activeCategory === categoryNameLower
+                        ? 'bg-orange-500 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <span className="mr-2">{category.icon}</span>
+                    {categoryName || 'Category'}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Menu Items */}
       <main className="p-4 space-y-4 pb-20">
-        
-        {getCurrentCategoryItems().length === 0 ? (
+        {!categories.length || !activeCategory ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+              <span className="text-2xl">⏳</span>
+            </div>
+            <p className="text-gray-500">Loading menu...</p>
+          </div>
+        ) : getCurrentCategoryItems().length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
               <span className="text-2xl">🍽️</span>
