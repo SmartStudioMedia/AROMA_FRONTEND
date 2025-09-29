@@ -53,6 +53,66 @@ const getText = (obj, lang) => {
   return obj?.[lang] || obj?.en || '';
 };
 
+// Category translation mapping
+const categoryTranslations = {
+  'Burgers': {
+    en: 'Burgers',
+    mt: 'Burgers', 
+    it: 'Hamburger',
+    fr: 'Burgers',
+    es: 'Hamburguesas',
+    de: 'Burger',
+    ru: 'Бургеры',
+    pt: 'Hambúrgueres',
+    nl: 'Burgers',
+    pl: 'Burgery'
+  },
+  'Sides': {
+    en: 'Sides',
+    mt: 'Ħut',
+    it: 'Contorni',
+    fr: 'Accompagnements',
+    es: 'Acompañamientos',
+    de: 'Beilagen',
+    ru: 'Гарниры',
+    pt: 'Acompanhamentos',
+    nl: 'Bijgerechten',
+    pl: 'Dodatki'
+  },
+  'Drinks': {
+    en: 'Drinks',
+    mt: 'Xorbiet',
+    it: 'Bevande',
+    fr: 'Boissons',
+    es: 'Bebidas',
+    de: 'Getränke',
+    ru: 'Напитки',
+    pt: 'Bebidas',
+    nl: 'Drankjes',
+    pl: 'Napoje'
+  },
+  'Desserts': {
+    en: 'Desserts',
+    mt: 'Dessert',
+    it: 'Dolci',
+    fr: 'Desserts',
+    es: 'Postres',
+    de: 'Desserts',
+    ru: 'Десерты',
+    pt: 'Sobremesas',
+    nl: 'Desserts',
+    pl: 'Desery'
+  }
+};
+
+// Helper function to translate category names
+function translateCategory(categoryName, lang = 'en') {
+  if (categoryTranslations[categoryName]) {
+    return categoryTranslations[categoryName][lang] || categoryTranslations[categoryName].en;
+  }
+  return categoryName; // Return original if no translation found
+}
+
 export default function App() {
   // State
   const [language, setLanguage] = useState('en');
@@ -140,10 +200,8 @@ export default function App() {
   useEffect(() => {
     if (categories.length > 0) {
       const firstCategory = categories[0];
-      const categoryName = typeof firstCategory.name === 'string' ? firstCategory.name : firstCategory.name[language] || firstCategory.name.en;
-      if (categoryName && typeof categoryName === 'string') {
-        setActiveCategory(categoryName.toLowerCase());
-      }
+      const categoryName = translateCategory(firstCategory.name, language);
+      setActiveCategory(categoryName.toLowerCase());
     }
   }, [language, categories]);
 
@@ -154,8 +212,8 @@ export default function App() {
     }
     
     const categoryId = categories.find(cat => {
-      const categoryName = typeof cat.name === 'string' ? cat.name : cat.name[language] || cat.name.en;
-      return categoryName && typeof categoryName === 'string' && categoryName.toLowerCase() === activeCategory;
+      const categoryName = translateCategory(cat.name, language);
+      return categoryName.toLowerCase() === activeCategory;
     })?.id;
     
     if (!categoryId) {
@@ -308,17 +366,29 @@ export default function App() {
       const videoId = getYouTubeVideoId(url);
       
       if (videoId) {
-        // Special handling for YouTube Shorts
+        // Optimized parameters for all YouTube videos including Shorts
+        const baseParams = [
+          'autoplay=1',
+          'mute=1',
+          'rel=0',
+          'modestbranding=1',
+          'fs=1',
+          'cc_load_policy=0',
+          'iv_load_policy=3',
+          'enablejsapi=1',
+          `origin=${window.location.origin}`,
+          'playsinline=1',
+          'controls=1',
+          'disablekb=0',
+          'loop=0'
+        ];
+        
         if (isYouTubeShort(url)) {
-          // YouTube Shorts specific parameters to prevent corruption
-          return `https://www.youtube.com/embed/${videoId}?autoplay=0&mute=1&rel=0&modestbranding=1&fs=1&cc_load_policy=0&iv_load_policy=3&enablejsapi=1&origin=${window.location.origin}&playsinline=1&controls=1&disablekb=1&loop=0`;
-        } else if (isMobileDevice()) {
-          // Mobile-optimized parameters to prevent corruption
-          return `https://www.youtube.com/embed/${videoId}?autoplay=0&mute=1&rel=0&modestbranding=1&fs=1&cc_load_policy=0&iv_load_policy=3&enablejsapi=1&origin=${window.location.origin}&playsinline=1&controls=1`;
-        } else {
-          // Desktop parameters
-          return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&rel=0&modestbranding=1&fs=1&cc_load_policy=0&iv_load_policy=3&start=0&end=0&enablejsapi=1&origin=${window.location.origin}`;
+          // Special parameters for Shorts to prevent corruption
+          baseParams.push('start=0', 'end=0');
         }
+        
+        return `https://www.youtube.com/embed/${videoId}?${baseParams.join('&')}`;
       }
       return '';
     } catch (error) {
@@ -659,10 +729,8 @@ export default function App() {
                     </div>
                   )}
                   
-                  {/* FORCE DIRECT LINK FOR YOUTUBE SHORTS ONLY */}
-                  {/* Normal YouTube videos can use iframe, Shorts must use direct links */}
-                  {/* Add ?forceDirect=true to URL to force all videos to direct links */}
-                  {(isYouTubeShort(videoModalSrc) || new URLSearchParams(window.location.search).get('forceDirect')) ? (
+                  {/* Allow YouTube Shorts to use embedded player with optimized parameters */}
+                  {(new URLSearchParams(window.location.search).get('forceDirect')) ? (
                     <div className="w-full h-96 bg-gradient-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center text-white">
                       <div className="text-center p-6">
                         <div className="text-8xl mb-6">{isYouTubeShort(videoModalSrc) ? '🎬' : '📱'}</div>
@@ -980,25 +1048,25 @@ export default function App() {
         <div className="bg-white border-b">
           <div className="px-4 py-3">
             <div className="flex gap-2 overflow-x-auto scrollbar-hide category-scroll">
-              {categories.map(category => {
-                const categoryName = typeof category.name === 'string' ? category.name : category.name[language] || category.name.en;
-                const categoryNameLower = categoryName && typeof categoryName === 'string' ? categoryName.toLowerCase() : '';
-                
-                return (
-                  <button
-                    key={category.id}
-                    onClick={() => setActiveCategory(categoryNameLower)}
-                    className={`flex-shrink-0 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
-                      activeCategory === categoryNameLower
-                        ? 'bg-orange-500 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <span className="mr-2">{category.icon}</span>
-                    {categoryName || 'Category'}
-                  </button>
-                );
-              })}
+            {categories.map(category => {
+              const categoryName = translateCategory(category.name, language);
+              const categoryNameLower = categoryName.toLowerCase();
+              
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => setActiveCategory(categoryNameLower)}
+                  className={`flex-shrink-0 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                    activeCategory === categoryNameLower
+                      ? 'bg-orange-500 text-white shadow-md'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <span className="mr-2">{category.icon}</span>
+                  {categoryName}
+                </button>
+              );
+            })}
             </div>
           </div>
         </div>
