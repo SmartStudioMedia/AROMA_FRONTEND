@@ -47,13 +47,25 @@ async function apiPost(path, data) {
   }
 }
 
-// Helper function to get translated text
+// Enhanced helper function to get translated text
 const getText = (obj, lang) => {
+  // Handle null/undefined
+  if (!obj) return '';
+  
+  // Handle string values
   if (typeof obj === 'string') {
     // Try menu item translation first
     return translateMenuItem(obj, lang);
   }
-  return obj?.[lang] || obj?.en || '';
+  
+  // Handle object values
+  if (typeof obj === 'object') {
+    // If it's an object, try to get the language-specific translation
+    return obj[lang] || obj.en || obj.toString() || '';
+  }
+  
+  // Handle other types
+  return obj.toString() || '';
 };
 
 // Category translation mapping
@@ -110,35 +122,44 @@ const categoryTranslations = {
 
 // Helper function to translate category names
 function translateCategory(categoryName, lang = 'en') {
+  // Handle both string and object category names
+  if (typeof categoryName === 'object' && categoryName !== null) {
+    return categoryName[lang] || categoryName.en || categoryName.toString();
+  }
+  
+  if (typeof categoryName !== 'string') {
+    return categoryName || '';
+  }
+  
   if (categoryTranslations[categoryName]) {
     return categoryTranslations[categoryName][lang] || categoryTranslations[categoryName].en;
   }
   
   // For new categories, try to translate common food terms
   const commonTerms = {
-    'Pizza': { en: 'Pizza', es: 'Pizza', it: 'Pizza', fr: 'Pizza', de: 'Pizza', ru: 'Пицца', pt: 'Pizza', nl: 'Pizza', pl: 'Pizza' },
-    'Pasta': { en: 'Pasta', es: 'Pasta', it: 'Pasta', fr: 'Pâtes', de: 'Pasta', ru: 'Паста', pt: 'Massa', nl: 'Pasta', pl: 'Makaron' },
-    'Salad': { en: 'Salad', es: 'Ensalada', it: 'Insalata', fr: 'Salade', de: 'Salat', ru: 'Салат', pt: 'Salada', nl: 'Salade', pl: 'Sałatka' },
-    'Soup': { en: 'Soup', es: 'Sopa', it: 'Zuppa', fr: 'Soupe', de: 'Suppe', ru: 'Суп', pt: 'Sopa', nl: 'Soep', pl: 'Zupa' },
-    'Appetizer': { en: 'Appetizer', es: 'Aperitivo', it: 'Antipasto', fr: 'Entrée', de: 'Vorspeise', ru: 'Закуска', pt: 'Aperitivo', nl: 'Voorgerecht', pl: 'Przystawka' },
-    'Main Course': { en: 'Main Course', es: 'Plato Principal', it: 'Piatto Principale', fr: 'Plat Principal', de: 'Hauptgericht', ru: 'Основное блюдо', pt: 'Prato Principal', nl: 'Hoofdgerecht', pl: 'Danie Główne' },
-    'Breakfast': { en: 'Breakfast', es: 'Desayuno', it: 'Colazione', fr: 'Petit-déjeuner', de: 'Frühstück', ru: 'Завтрак', pt: 'Café da Manhã', nl: 'Ontbijt', pl: 'Śniadanie' },
-    'Lunch': { en: 'Lunch', es: 'Almuerzo', it: 'Pranzo', fr: 'Déjeuner', de: 'Mittagessen', ru: 'Обед', pt: 'Almoço', nl: 'Lunch', pl: 'Obiad' },
-    'Dinner': { en: 'Dinner', es: 'Cena', it: 'Cena', fr: 'Dîner', de: 'Abendessen', ru: 'Ужин', pt: 'Jantar', nl: 'Diner', pl: 'Kolacja' },
-    'Snacks': { en: 'Snacks', es: 'Aperitivos', it: 'Spuntini', fr: 'Collations', de: 'Snacks', ru: 'Закуски', pt: 'Lanches', nl: 'Snacks', pl: 'Przekąski' },
-    'Beverages': { en: 'Beverages', es: 'Bebidas', it: 'Bevande', fr: 'Boissons', de: 'Getränke', ru: 'Напитки', pt: 'Bebidas', nl: 'Drankjes', pl: 'Napoje' },
-    'Dessert': { en: 'Dessert', es: 'Postre', it: 'Dolce', fr: 'Dessert', de: 'Dessert', ru: 'Десерт', pt: 'Sobremesa', nl: 'Dessert', pl: 'Deser' },
-    'Vegetarian': { en: 'Vegetarian', es: 'Vegetariano', it: 'Vegetariano', fr: 'Végétarien', de: 'Vegetarisch', ru: 'Вегетарианский', pt: 'Vegetariano', nl: 'Vegetarisch', pl: 'Wegetariański' },
-    'Vegan': { en: 'Vegan', es: 'Vegano', it: 'Vegano', fr: 'Végan', de: 'Vegan', ru: 'Веганский', pt: 'Vegano', nl: 'Veganistisch', pl: 'Wegański' },
-    'Gluten Free': { en: 'Gluten Free', es: 'Sin Gluten', it: 'Senza Glutine', fr: 'Sans Gluten', de: 'Glutenfrei', ru: 'Без глютена', pt: 'Sem Glúten', nl: 'Glutenvrij', pl: 'Bezglutenowy' },
-    'Healthy': { en: 'Healthy', es: 'Saludable', it: 'Sano', fr: 'Sain', de: 'Gesund', ru: 'Здоровый', pt: 'Saudável', nl: 'Gezond', pl: 'Zdrowy' },
-    'Spicy': { en: 'Spicy', es: 'Picante', it: 'Piccante', fr: 'Épicé', de: 'Scharf', ru: 'Острый', pt: 'Picante', nl: 'Pittig', pl: 'Ostry' },
-    'Seafood': { en: 'Seafood', es: 'Mariscos', it: 'Frutti di Mare', fr: 'Fruits de Mer', de: 'Meeresfrüchte', ru: 'Морепродукты', pt: 'Frutos do Mar', nl: 'Zeevruchten', pl: 'Owoce Morza' },
-    'Meat': { en: 'Meat', es: 'Carne', it: 'Carne', fr: 'Viande', de: 'Fleisch', ru: 'Мясо', pt: 'Carne', nl: 'Vlees', pl: 'Mięso' },
-    'Chicken': { en: 'Chicken', es: 'Pollo', it: 'Pollo', fr: 'Poulet', de: 'Hähnchen', ru: 'Курица', pt: 'Frango', nl: 'Kip', pl: 'Kurczak' },
-    'Beef': { en: 'Beef', es: 'Carne de Res', it: 'Manzo', fr: 'Bœuf', de: 'Rindfleisch', ru: 'Говядина', pt: 'Carne de Vaca', nl: 'Rundvlees', pl: 'Wołowina' },
-    'Pork': { en: 'Pork', es: 'Cerdo', it: 'Maiale', fr: 'Porc', de: 'Schweinefleisch', ru: 'Свинина', pt: 'Porco', nl: 'Varkensvlees', pl: 'Wieprzowina' },
-    'Fish': { en: 'Fish', es: 'Pescado', it: 'Pesce', fr: 'Poisson', de: 'Fisch', ru: 'Рыба', pt: 'Peixe', nl: 'Vis', pl: 'Ryba' },
+    'Pizza': { en: 'Pizza', mt: 'Pizza', es: 'Pizza', it: 'Pizza', fr: 'Pizza', de: 'Pizza', ru: 'Пицца', pt: 'Pizza', nl: 'Pizza', pl: 'Pizza' },
+    'Pasta': { en: 'Pasta', mt: 'Pasta', es: 'Pasta', it: 'Pasta', fr: 'Pâtes', de: 'Pasta', ru: 'Паста', pt: 'Massa', nl: 'Pasta', pl: 'Makaron' },
+    'Salad': { en: 'Salad', mt: 'Insalata', es: 'Ensalada', it: 'Insalata', fr: 'Salade', de: 'Salat', ru: 'Салат', pt: 'Salada', nl: 'Salade', pl: 'Sałatka' },
+    'Soup': { en: 'Soup', mt: 'Soppa', es: 'Sopa', it: 'Zuppa', fr: 'Soupe', de: 'Suppe', ru: 'Суп', pt: 'Sopa', nl: 'Soep', pl: 'Zupa' },
+    'Appetizer': { en: 'Appetizer', mt: 'Antipasti', es: 'Aperitivo', it: 'Antipasto', fr: 'Entrée', de: 'Vorspeise', ru: 'Закуска', pt: 'Aperitivo', nl: 'Voorgerecht', pl: 'Przystawka' },
+    'Main Course': { en: 'Main Course', mt: 'Pjatti Prinċipali', es: 'Plato Principal', it: 'Piatto Principale', fr: 'Plat Principal', de: 'Hauptgericht', ru: 'Основное блюдо', pt: 'Prato Principal', nl: 'Hoofdgerecht', pl: 'Danie Główne' },
+    'Breakfast': { en: 'Breakfast', mt: 'Kolazzjon', es: 'Desayuno', it: 'Colazione', fr: 'Petit-déjeuner', de: 'Frühstück', ru: 'Завтрак', pt: 'Café da Manhã', nl: 'Ontbijt', pl: 'Śniadanie' },
+    'Lunch': { en: 'Lunch', mt: 'Ħin tal-ikel', es: 'Almuerzo', it: 'Pranzo', fr: 'Déjeuner', de: 'Mittagessen', ru: 'Обед', pt: 'Almoço', nl: 'Lunch', pl: 'Obiad' },
+    'Dinner': { en: 'Dinner', mt: 'Ċena', es: 'Cena', it: 'Cena', fr: 'Dîner', de: 'Abendessen', ru: 'Ужин', pt: 'Jantar', nl: 'Diner', pl: 'Kolacja' },
+    'Snacks': { en: 'Snacks', mt: 'Snacks', es: 'Aperitivos', it: 'Spuntini', fr: 'Collations', de: 'Snacks', ru: 'Закуски', pt: 'Lanches', nl: 'Snacks', pl: 'Przekąski' },
+    'Beverages': { en: 'Beverages', mt: 'Xarbiet', es: 'Bebidas', it: 'Bevande', fr: 'Boissons', de: 'Getränke', ru: 'Напитки', pt: 'Bebidas', nl: 'Drankjes', pl: 'Napoje' },
+    'Dessert': { en: 'Dessert', mt: 'Dessert', es: 'Postre', it: 'Dolce', fr: 'Dessert', de: 'Dessert', ru: 'Десерт', pt: 'Sobremesa', nl: 'Dessert', pl: 'Deser' },
+    'Vegetarian': { en: 'Vegetarian', mt: 'Veġetarjan', es: 'Vegetariano', it: 'Vegetariano', fr: 'Végétarien', de: 'Vegetarisch', ru: 'Вегетарианский', pt: 'Vegetariano', nl: 'Vegetarisch', pl: 'Wegetariański' },
+    'Vegan': { en: 'Vegan', mt: 'Vegan', es: 'Vegano', it: 'Vegano', fr: 'Végan', de: 'Vegan', ru: 'Веганский', pt: 'Vegano', nl: 'Veganistisch', pl: 'Wegański' },
+    'Gluten Free': { en: 'Gluten Free', mt: 'Bla Gluten', es: 'Sin Gluten', it: 'Senza Glutine', fr: 'Sans Gluten', de: 'Glutenfrei', ru: 'Без глютена', pt: 'Sem Glúten', nl: 'Glutenvrij', pl: 'Bezglutenowy' },
+    'Healthy': { en: 'Healthy', mt: 'Sani', es: 'Saludable', it: 'Sano', fr: 'Sain', de: 'Gesund', ru: 'Здоровый', pt: 'Saudável', nl: 'Gezond', pl: 'Zdrowy' },
+    'Spicy': { en: 'Spicy', mt: 'Ħafif', es: 'Picante', it: 'Piccante', fr: 'Épicé', de: 'Scharf', ru: 'Острый', pt: 'Picante', nl: 'Pittig', pl: 'Ostry' },
+    'Seafood': { en: 'Seafood', mt: 'Frott tal-baħar', es: 'Mariscos', it: 'Frutti di Mare', fr: 'Fruits de Mer', de: 'Meeresfrüchte', ru: 'Морепродукты', pt: 'Frutos do Mar', nl: 'Zeevruchten', pl: 'Owoce Morza' },
+    'Meat': { en: 'Meat', mt: 'Laħam', es: 'Carne', it: 'Carne', fr: 'Viande', de: 'Fleisch', ru: 'Мясо', pt: 'Carne', nl: 'Vlees', pl: 'Mięso' },
+    'Chicken': { en: 'Chicken', mt: 'Tiġieġ', es: 'Pollo', it: 'Pollo', fr: 'Poulet', de: 'Hähnchen', ru: 'Курица', pt: 'Frango', nl: 'Kip', pl: 'Kurczak' },
+    'Beef': { en: 'Beef', mt: 'Laħam tal-baħar', es: 'Carne de Res', it: 'Manzo', fr: 'Bœuf', de: 'Rindfleisch', ru: 'Говядина', pt: 'Carne de Vaca', nl: 'Rundvlees', pl: 'Wołowina' },
+    'Pork': { en: 'Pork', mt: 'Laħam tal-ħanżir', es: 'Cerdo', it: 'Maiale', fr: 'Porc', de: 'Schweinefleisch', ru: 'Свинина', pt: 'Porco', nl: 'Varkensvlees', pl: 'Wieprzowina' },
+    'Fish': { en: 'Fish', mt: 'Ħut', es: 'Pescado', it: 'Pesce', fr: 'Poisson', de: 'Fisch', ru: 'Рыба', pt: 'Peixe', nl: 'Vis', pl: 'Ryba' },
     'Vegetables': { en: 'Vegetables', es: 'Verduras', it: 'Verdure', fr: 'Légumes', de: 'Gemüse', ru: 'Овощи', pt: 'Legumes', nl: 'Groenten', pl: 'Warzywa' },
     'Fruits': { en: 'Fruits', es: 'Frutas', it: 'Frutta', fr: 'Fruits', de: 'Obst', ru: 'Фрукты', pt: 'Frutas', nl: 'Fruit', pl: 'Owoce' },
     'Bread': { en: 'Bread', es: 'Pan', it: 'Pane', fr: 'Pain', de: 'Brot', ru: 'Хлеб', pt: 'Pão', nl: 'Brood', pl: 'Chleb' },
@@ -261,27 +282,56 @@ const itemTranslations = {
   'Salty': { en: 'Salty', es: 'Salado', it: 'Salato', fr: 'Salé', de: 'Salzig', ru: 'Соленый', pt: 'Salgado', nl: 'Zout', pl: 'Słony' }
 };
 
-// Helper function to translate menu item names
+// Enhanced menu item translation function
 function translateMenuItem(itemName, lang = 'en') {
-  if (typeof itemName === 'string') {
-    // Try to find exact match first
-    if (itemTranslations[itemName]) {
-      return itemTranslations[itemName][lang] || itemTranslations[itemName].en;
-    }
-    
-    // Try to find partial matches for compound names
-    const normalizedName = itemName.toLowerCase();
-    for (const [key, translations] of Object.entries(itemTranslations)) {
-      if (normalizedName.includes(key.toLowerCase())) {
-        return translations[lang] || translations.en;
-      }
-    }
-    
-    return itemName; // Return original if no translation found
+  // Handle both string and object item names
+  if (typeof itemName === 'object' && itemName !== null) {
+    return itemName[lang] || itemName.en || itemName.toString();
   }
   
-  // If it's already an object, use the existing translation system
-  return itemName[lang] || itemName.en || itemName;
+  if (typeof itemName !== 'string') {
+    return itemName || '';
+  }
+  
+  // Try to find exact match first
+  if (itemTranslations[itemName]) {
+    return itemTranslations[itemName][lang] || itemTranslations[itemName].en;
+  }
+  
+  // Try to find partial matches for compound names
+  const normalizedName = itemName.toLowerCase();
+  for (const [key, translations] of Object.entries(itemTranslations)) {
+    if (normalizedName.includes(key.toLowerCase())) {
+      return translations[lang] || translations.en;
+    }
+  }
+  
+  // Enhanced automatic translation for new items
+  const commonFoodTerms = {
+    'Burger': { en: 'Burger', mt: 'Burger', es: 'Hamburguesa', it: 'Burger', fr: 'Burger', de: 'Burger', ru: 'Бургер', pt: 'Hambúrguer', nl: 'Burger', pl: 'Burger' },
+    'Pizza': { en: 'Pizza', mt: 'Pizza', es: 'Pizza', it: 'Pizza', fr: 'Pizza', de: 'Pizza', ru: 'Пицца', pt: 'Pizza', nl: 'Pizza', pl: 'Pizza' },
+    'Pasta': { en: 'Pasta', mt: 'Pasta', es: 'Pasta', it: 'Pasta', fr: 'Pâtes', de: 'Pasta', ru: 'Паста', pt: 'Massa', nl: 'Pasta', pl: 'Makaron' },
+    'Salad': { en: 'Salad', mt: 'Insalata', es: 'Ensalada', it: 'Insalata', fr: 'Salade', de: 'Salat', ru: 'Салат', pt: 'Salada', nl: 'Salade', pl: 'Sałatka' },
+    'Soup': { en: 'Soup', mt: 'Soppa', es: 'Sopa', it: 'Zuppa', fr: 'Soupe', de: 'Suppe', ru: 'Суп', pt: 'Sopa', nl: 'Soep', pl: 'Zupa' },
+    'Sandwich': { en: 'Sandwich', mt: 'Sandwich', es: 'Sándwich', it: 'Panino', fr: 'Sandwich', de: 'Sandwich', ru: 'Сэндвич', pt: 'Sanduíche', nl: 'Sandwich', pl: 'Kanapka' },
+    'Chicken': { en: 'Chicken', mt: 'Tiġieġ', es: 'Pollo', it: 'Pollo', fr: 'Poulet', de: 'Hähnchen', ru: 'Курица', pt: 'Frango', nl: 'Kip', pl: 'Kurczak' },
+    'Beef': { en: 'Beef', mt: 'Laħam tal-baqar', es: 'Carne de res', it: 'Manzo', fr: 'Bœuf', de: 'Rindfleisch', ru: 'Говядина', pt: 'Carne bovina', nl: 'Rundvlees', pl: 'Wołowina' },
+    'Fish': { en: 'Fish', mt: 'Ħut', es: 'Pescado', it: 'Pesce', fr: 'Poisson', de: 'Fisch', ru: 'Рыба', pt: 'Peixe', nl: 'Vis', pl: 'Ryba' },
+    'Vegetarian': { en: 'Vegetarian', mt: 'Veġetarjan', es: 'Vegetariano', it: 'Vegetariano', fr: 'Végétarien', de: 'Vegetarisch', ru: 'Вегетарианский', pt: 'Vegetariano', nl: 'Vegetarisch', pl: 'Wegetariański' },
+    'Vegan': { en: 'Vegan', mt: 'Vegan', es: 'Vegano', it: 'Vegano', fr: 'Végan', de: 'Vegan', ru: 'Веганский', pt: 'Vegano', nl: 'Vegan', pl: 'Wegański' },
+    'Spicy': { en: 'Spicy', mt: 'Ħafif', es: 'Picante', it: 'Piccante', fr: 'Épicé', de: 'Scharf', ru: 'Острый', pt: 'Picante', nl: 'Pittig', pl: 'Ostry' },
+    'Sweet': { en: 'Sweet', mt: 'Ħelu', es: 'Dulce', it: 'Dolce', fr: 'Sucré', de: 'Süß', ru: 'Сладкий', pt: 'Doce', nl: 'Zoet', pl: 'Słodki' },
+    'Salty': { en: 'Salty', mt: 'Mielħ', es: 'Salado', it: 'Salato', fr: 'Salé', de: 'Salzig', ru: 'Соленый', pt: 'Salgado', nl: 'Zout', pl: 'Słony' }
+  };
+  
+  // Try to find partial matches using common terms
+  for (const [key, translations] of Object.entries(commonFoodTerms)) {
+    if (normalizedName.includes(key.toLowerCase())) {
+      return translations[lang] || translations.en;
+    }
+  }
+  
+  return itemName; // Return original if no translation found
 }
 
 export default function App() {
