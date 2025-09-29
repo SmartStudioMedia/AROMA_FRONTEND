@@ -278,20 +278,31 @@ export default function App() {
 
   // Helper function to get YouTube video ID
   const getYouTubeVideoId = (url) => {
-    if (!url || typeof url !== 'string') return '';
+    if (!url || typeof url !== 'string') {
+      console.log('getYouTubeVideoId: Invalid URL:', url);
+      return '';
+    }
     
     try {
+      console.log('getYouTubeVideoId: Processing URL:', url);
+      
       if (url.includes('youtube.com/watch?v=')) {
         const parts = url.split('v=');
         if (parts.length > 1) {
-          return parts[1].split('&')[0];
+          const videoId = parts[1].split('&')[0];
+          console.log('getYouTubeVideoId: Extracted video ID from youtube.com:', videoId);
+          return videoId;
         }
       } else if (url.includes('youtu.be/')) {
         const parts = url.split('youtu.be/');
         if (parts.length > 1) {
-          return parts[1].split('?')[0];
+          const videoId = parts[1].split('?')[0];
+          console.log('getYouTubeVideoId: Extracted video ID from youtu.be:', videoId);
+          return videoId;
         }
       }
+      
+      console.log('getYouTubeVideoId: No valid YouTube URL pattern found');
       return '';
     } catch (error) {
       console.error('Error extracting YouTube video ID:', error);
@@ -299,18 +310,45 @@ export default function App() {
     }
   };
 
+  // Test the YouTube URL parsing
+  const testYouTubeUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+  console.log('Testing YouTube URL parsing:', testYouTubeUrl);
+  const testVideoId = getYouTubeVideoId(testYouTubeUrl);
+  console.log('Test result - Video ID:', testVideoId);
+  console.log('Test thumbnail URL:', `https://img.youtube.com/vi/${testVideoId}/mqdefault.jpg`);
+  
+  // Test if the thumbnail URL actually works
+  const testThumbnailUrl = `https://img.youtube.com/vi/${testVideoId}/mqdefault.jpg`;
+  const testImg = new Image();
+  testImg.onload = () => console.log('✅ YouTube thumbnail test successful:', testThumbnailUrl);
+  testImg.onerror = () => console.log('❌ YouTube thumbnail test failed:', testThumbnailUrl);
+  testImg.src = testThumbnailUrl;
+
   // Helper function to get the primary media URL (video takes priority over image)
   const getPrimaryMediaUrl = (item) => {
-    if (!item) return '';
+    if (!item) {
+      console.log('getPrimaryMediaUrl: No item provided');
+      return '';
+    }
+    
+    console.log('getPrimaryMediaUrl: Item data:', {
+      id: item.id,
+      name: item.name?.en || 'Unknown',
+      video: item.video,
+      image: item.image
+    });
     
     if (item.video && typeof item.video === 'string' && item.video.trim() !== '') {
+      console.log('getPrimaryMediaUrl: Using video URL:', item.video);
       return item.video;
     }
     
     if (item.image && typeof item.image === 'string') {
+      console.log('getPrimaryMediaUrl: Using image URL:', item.image);
       return item.image;
     }
     
+    console.log('getPrimaryMediaUrl: No valid media URL found');
     return '';
   };
 
@@ -676,12 +714,14 @@ export default function App() {
                     {(getPrimaryMediaUrl(item).includes('youtube.com') || getPrimaryMediaUrl(item).includes('youtu.be')) ? (
                       <img
                         src={`https://img.youtube.com/vi/${getYouTubeVideoId(getPrimaryMediaUrl(item))}/mqdefault.jpg`}
-                alt={getText(item.name, language)}
+                        alt={getText(item.name, language)}
                         className="w-full h-full object-cover rounded-lg"
                         onError={(e) => {
+                          console.log('YouTube thumbnail failed to load, showing fallback');
                           e.target.style.display = 'none';
                           e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gray-300 rounded-lg flex items-center justify-center"><span class="text-2xl">🎥</span></div>';
                         }}
+                        onLoad={() => console.log('YouTube thumbnail loaded successfully')}
                       />
                     ) : getPrimaryMediaUrl(item).includes('vimeo.com') ? (
                       <div className="w-full h-full bg-gray-300 rounded-lg flex items-center justify-center">
@@ -778,9 +818,11 @@ export default function App() {
                       alt={getText(selectedItem.name, language)}
                       className="w-full h-full object-cover rounded-t-2xl"
                       onError={(e) => {
+                        console.log('YouTube thumbnail failed to load in selected item modal, showing fallback');
                         e.target.style.display = 'none';
                         e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gray-300 rounded-t-2xl flex items-center justify-center"><span class="text-6xl">🎥</span></div>';
                       }}
+                      onLoad={() => console.log('YouTube thumbnail loaded successfully in selected item modal')}
                     />
                   ) : getPrimaryMediaUrl(selectedItem).includes('vimeo.com') ? (
                     <div className="w-full h-full bg-gray-300 rounded-t-2xl flex items-center justify-center">
@@ -922,9 +964,11 @@ export default function App() {
                                   alt={getText(item.name, language)}
                                   className="w-full h-full object-cover rounded-lg"
                                   onError={(e) => {
+                                    console.log('YouTube thumbnail failed to load in cart, showing fallback');
                                     e.target.style.display = 'none';
                                     e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gray-300 rounded-lg flex items-center justify-center"><span class="text-sm">🎥</span></div>';
                                   }}
+                                  onLoad={() => console.log('YouTube thumbnail loaded successfully in cart')}
                                 />
                               ) : getPrimaryMediaUrl(item).includes('vimeo.com') ? (
                                 <div className="w-full h-full bg-gray-300 rounded-lg flex items-center justify-center">
