@@ -136,13 +136,25 @@ export default function App() {
     loadMenu();
   }, []);
 
+  // Update active category when language changes
+  useEffect(() => {
+    if (categories.length > 0) {
+      const firstCategory = categories[0];
+      const categoryName = typeof firstCategory.name === 'string' ? firstCategory.name : firstCategory.name[language] || firstCategory.name.en;
+      setActiveCategory(categoryName.toLowerCase());
+    }
+  }, [language, categories]);
+
   // Get items for current category
   const getCurrentCategoryItems = () => {
     if (!items || !activeCategory) {
       return [];
     }
     
-    const categoryId = categories.find(cat => cat.name.toLowerCase() === activeCategory)?.id;
+    const categoryId = categories.find(cat => {
+      const categoryName = typeof cat.name === 'string' ? cat.name : cat.name[language] || cat.name.en;
+      return categoryName.toLowerCase() === activeCategory;
+    })?.id;
     const filteredItems = items.filter(item => item.category_id === categoryId && item.active);
     
     return filteredItems;
@@ -961,20 +973,25 @@ export default function App() {
       <div className="bg-white border-b">
         <div className="px-4 py-3">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide category-scroll">
-            {categories.map(category => (
-              <button
-                key={category.id}
-                onClick={() => setActiveCategory(category.name.toLowerCase())}
-                className={`flex-shrink-0 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
-                  activeCategory === category.name.toLowerCase()
-                    ? 'bg-orange-500 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                <span className="mr-2">{category.icon}</span>
-                {category.name}
-              </button>
-            ))}
+            {categories.map(category => {
+              const categoryName = typeof category.name === 'string' ? category.name : category.name[language] || category.name.en;
+              const categoryNameLower = categoryName.toLowerCase();
+              
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => setActiveCategory(categoryNameLower)}
+                  className={`flex-shrink-0 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                    activeCategory === categoryNameLower
+                      ? 'bg-orange-500 text-white shadow-md'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <span className="mr-2">{category.icon}</span>
+                  {categoryName}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
