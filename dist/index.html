@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AROMA Restaurant - Digital Menu</title>
+    <meta name="description" content="AROMA Restaurant Digital Menu - Order your favorite meals with ease" />
+    <meta name="theme-color" content="#f97316" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="AROMA">
+    
+    <!-- Preload critical resources -->
+    <link rel="preconnect" href="https://images.unsplash.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://img.youtube.com">
+    
+    <!-- Mobile optimizations for video thumbnails -->
+    <style>
+      /* Optimize images for mobile display */
+      img {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+        image-rendering: optimize-contrast;
+        backface-visibility: hidden;
+        transform: translateZ(0);
+      }
+      
+      /* Ensure high DPI support on mobile */
+      @media (min-resolution: 192dpi) {
+        img {
+          image-rendering: -webkit-optimize-contrast;
+          image-rendering: crisp-edges;
+        }
+      }
+      
+      /* Mobile video iframe optimizations */
+      @media (max-width: 768px) {
+        iframe {
+          transform: translateZ(0);
+          backface-visibility: hidden;
+          will-change: transform;
+        }
+        
+        /* Prevent video corruption on mobile */
+        iframe[src*="youtube.com"] {
+          transform: translate3d(0, 0, 0);
+          perspective: 1000;
+        }
+      }
+      
+      /* Force hardware acceleration for mobile videos */
+      @media (max-width: 768px) {
+        .video-container {
+          transform: translateZ(0);
+          backface-visibility: hidden;
+        }
+      }
+    </style>
+    
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍔</text></svg>">
+    <script type="module" crossorigin src="/assets/index-9cd4cf3e.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-b1791c80.js">
+    <link rel="modulepreload" crossorigin href="/assets/icons-00207402.js">
+    <link rel="stylesheet" href="/assets/index-53871cd8.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    
+  </body>
+</html>
