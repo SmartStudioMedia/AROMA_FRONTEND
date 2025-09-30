@@ -395,8 +395,20 @@ export default function App() {
     marketingConsent: true, // Pre-ticked by default
     newsletterConsent: false
   });
+  const [qrTableNumber, setQrTableNumber] = useState(null);
 
   const t = translations[language];
+
+  // Check for QR code table number on page load
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tableParam = urlParams.get('table');
+    if (tableParam && !isNaN(tableParam)) {
+      setQrTableNumber(parseInt(tableParam));
+      // Force dine-in mode when coming from QR code
+      setOrderType('dine-in');
+    }
+  }, []);
 
   // Load menu from backend
   useEffect(() => {
@@ -840,7 +852,7 @@ export default function App() {
       const orderData = {
         items: cart.map(item => ({ id: item.id, qty: item.qty })),
         orderType: orderType,
-        tableNumber: orderType === 'dine-in' ? Math.floor(Math.random() * 20) + 1 : null,
+        tableNumber: orderType === 'dine-in' ? (qrTableNumber || Math.floor(Math.random() * 20) + 1) : null,
         customerName: customerInfo.name,
         customerEmail: customerInfo.email,
         marketingConsent: customerInfo.marketingConsent,
@@ -1219,6 +1231,19 @@ export default function App() {
               <LanguageDropdown isWelcome={true} />
             </div>
 
+            {/* QR Code Table Indicator */}
+            {qrTableNumber && (
+              <div className="mb-6 p-4 bg-green-100 border-2 border-green-500 rounded-xl">
+                <div className="flex items-center justify-center gap-3 text-green-800">
+                  <span className="text-2xl">📱</span>
+                  <div className="text-center">
+                    <div className="font-bold text-lg">Table {qrTableNumber}</div>
+                    <div className="text-sm">QR Code Detected</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Order Type Buttons */}
             <div className="space-y-4">
               <button
@@ -1226,10 +1251,14 @@ export default function App() {
                   setOrderType("dine-in");
                   setShowWelcome(false);
                 }}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-4 rounded-xl transition-colors flex items-center justify-center gap-3"
+                className={`w-full font-semibold py-4 rounded-xl transition-colors flex items-center justify-center gap-3 ${
+                  qrTableNumber 
+                    ? 'bg-green-500 hover:bg-green-600 text-white' 
+                    : 'bg-orange-500 hover:bg-orange-600 text-white'
+                }`}
               >
                 <span className="text-xl">🍽️</span>
-                <span>{t.dineIn}</span>
+                <span>{t.dineIn} {qrTableNumber ? `(Table ${qrTableNumber})` : ''}</span>
               </button>
               
               <button
